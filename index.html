@@ -523,6 +523,19 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
 }
 
 .side-box .tape td:not(:first-child){text-align:right;font-weight:700}
+
+/* phones: tighter header and tabs */
+@media (max-width:600px){
+  .wrap{padding:0 12px 30px}
+  header.top{padding:14px 0 8px;gap:10px}
+  .logo-img{height:46px}
+  h1{font-size:22px}
+  #printBtn,#printAllBtn{display:none}
+  .actions .btn{padding:8px 11px;font-size:13px}
+  nav.tabs{gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+  .tab{padding:8px 13px;font-size:13px;white-space:nowrap;flex:none}
+  .auth-card{padding:18px}
+}
 </style>
 </head>
 <body>
@@ -687,7 +700,7 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
           <button class="btn" id="pAdd">Add</button>
         </div>
         <div id="pList" class="chips"></div>
-        <p class="hint">🔒 = has an account (PIN set). Players without a PIN can claim their name on the login screen. Click a name to rename · 🔑 clears a forgotten PIN.</p>
+        <p class="hint">🔒 = has an account (PIN set). Players without a PIN can claim their name on the login screen. Tap a name to rename. Admin only: ✕ removes a player · 🔑 clears a forgotten PIN · 👑 hands the admin role to someone else.</p>
       </div>
       <div class="card">
         <h3>🕹️ Games</h3>
@@ -844,6 +857,8 @@ let U=Object.assign({tab:'home',stGame:'all',lgFilter:'all',currentBracket:null,
 const saveU=()=>saveJSON(UI_KEY,U);
 const dbURL=()=>(FIREBASE_DB_URL||U.dbLocal||'').replace(/\/+$/,'');
 const isOnline=()=>!!dbURL();
+// a share link can carry the database address (?db=…), so phones connect even before the file has it built in
+(()=>{const q=new URLSearchParams(location.search).get('db');if(q&&!FIREBASE_DB_URL&&/^https:\/\/[a-z0-9.-]+\.(firebaseio\.com|firebasedatabase\.app)\/?$/i.test(q)){U.dbLocal=q.replace(/\/+$/,'');saveU();}})();
 const cacheKey=()=>isOnline()?DATA_KEY+':fb':DATA_KEY;
 function localData(){ // data from older single-device versions
   const c=loadJSON(DATA_KEY);if(c)return normalize(c);
@@ -855,7 +870,7 @@ let loaded=!isOnline();      // true once the league has been received from Fire
 const cache=()=>saveJSON(cacheKey(),D);
 
 const byOrder=(a,b)=>(a.order||0)-(b.order||0);
-const P=()=>Object.values(D.players).filter(p=>p&&p.id).sort(byOrder);
+const P=()=>Object.values(D.players).filter(p=>p&&p.id&&!p.removed).sort(byOrder);
 const G=()=>Object.values(D.games).filter(g=>g&&g.id).sort(byOrder);
 const B=()=>Object.values(D.brackets).sort((a,b)=>(a.ts||0)-(b.ts||0));
 const C=()=>Object.values(D.chat).filter(m=>m&&m.text).sort((a,b)=>(a.ts||0)-(b.ts||0));
@@ -869,7 +884,8 @@ const playerOpts=()=>P().map(p=>`<option value="${p.id}">${esc(p.name)}</option>
 function roundName(r,R){const left=R-r;return left===1?'Final':left===2?'Semifinal':left===3?'Quarterfinal':'Round '+(r+1);}
 const curBracket=()=>D.brackets[U.currentBracket]||B()[B().length-1]||null;
 const champMap=()=>{const o={};B().forEach(b=>o[b.id]=b.champion||null);return o;};
-const me=()=>D.players[U.me]?U.me:'';
+const me=()=>D.players[U.me]&&!D.players[U.me].removed?U.me:'';
+const isAdmin=()=>!!me()&&D.meta.admin===me();
 
 function setPath(root,path,val){
   const segs=String(path).split('/').filter(Boolean);
@@ -880,53 +896,105 @@ function setPath(root,path,val){
   if(val===null||val===undefined){if(Array.isArray(o))o[k]=undefined;else delete o[k];}else o[k]=val;
 }
 
-/* ---------- SYNC: one shared league on Firebase Realtime Database (REST + live stream) ---------- */
+/* ---------- SYNC: one shared league on Firebase Realtime Database ----------
+   1st choice: the official Firebase SDK (WebSocket, falls back to long-polling by itself).
+   Backup: Firebase REST live stream, plus a quick re-check whenever the stream goes quiet
+   (some mobile networks and in-app browsers hold streams back). */
+const FB_SDK=['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'];
+const clean=v=>v===undefined?null:JSON.parse(JSON.stringify(v)); // Firebase refuses `undefined`
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);setTimeout(()=>no(new Error('timeout')),8000);});}
 const Sync={
-  es:null,status:'warn',
+  mode:null,got:false,status:'warn',es:null,lastEv:0,pollT:null,
   url(p){return `${dbURL()}/${DB_NODE}${p||''}.json`;},
+  ref(p){return this.db.ref(DB_NODE+(p||''));},
   write(method,p,val){
     if(!isOnline())return Promise.resolve();
-    return fetch(this.url(p),{method,body:val===undefined?undefined:JSON.stringify(val)})
-      .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);})
-      .catch(()=>{toast('⚠️ Couldn’t save online. Check your internet or the Firebase rules.');this.setStatus('err');});
+    const fail=()=>{toast('⚠️ Couldn’t save online. Check your internet or the Firebase rules.');this.setStatus('err');};
+    if(this.mode==='sdk'){
+      const r=this.ref(p);
+      return (method==='DELETE'?r.remove():r.set(clean(val))).catch(fail);
+    }
+    return fetch(this.url(p),{method,body:val===undefined?undefined:JSON.stringify(clean(val))})
+      .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);if(!this.streamOk())this.poll(300);})
+      .catch(fail);
   },
   put(path,val){setPath(D,path,val);D=normalize(D);cache();this.write('PUT',path,val);},
   del(path){setPath(D,path,null);D=normalize(D);cache();this.write('DELETE',path);},
   replaceAll(obj){D=normalize(obj);cache();return this.write('PUT','',D);},
+  // a full copy of the league arrived (from the SDK or a re-check)
+  apply(data){
+    const first=!this.got;this.got=true;
+    const before=loaded&&!first?champMap():null;
+    D=normalize(data||{});
+    if(first){loaded=true;cache();onLoaded(!data);return;}
+    scheduleRemote(before);
+  },
   connect(){
-    this.disconnect();
     if(!isOnline()){loaded=true;this.setStatus('local');renderAll();return;}
     this.setStatus('warn','Connecting…');
-    let es;try{es=new EventSource(this.url(''));}catch(e){this.setStatus('err');return;}
-    this.es=es;let first=true;
-    const handle=(type,e)=>{
-      let msg;try{msg=JSON.parse(e.data);}catch(_){return;}
-      if(!msg)return;
-      const before=loaded&&!first?champMap():null;
-      if(type==='put'){if(msg.path==='/')D=normalize(msg.data||{});else setPath(D,msg.path,msg.data);}
-      else{const base=msg.path==='/'?'':msg.path;Object.keys(msg.data||{}).forEach(k=>setPath(D,base+'/'+k,msg.data[k]));}
-      D=normalize(D);
-      const wasFirst=first;first=false;
-      this.setStatus('live');
-      if(wasFirst){loaded=true;cache();onLoaded(!msg.data);return;}
-      scheduleRemote(before);
-    };
-    es.addEventListener('put',e=>handle('put',e));
-    es.addEventListener('patch',e=>handle('patch',e));
-    es.addEventListener('cancel',()=>{this.setStatus('err','No permission');toast('⚠️ Firebase rules are blocking the league. See Setup.');});
-    es.onerror=()=>this.setStatus(es.readyState===2?'err':'warn',es.readyState===2?'Offline':'Reconnecting…');
-    // never keep players waiting on the login screen
-    setTimeout(()=>{if(!loaded){loaded=true;renderAll();}},5000);
+    setTimeout(()=>{if(!loaded){loaded=true;renderAll();}},6000); // never keep the login screen waiting forever
+    Promise.all([loadScript(FB_SDK[0])]).then(()=>loadScript(FB_SDK[1])).then(()=>this.startSDK()).catch(()=>this.startREST());
   },
-  disconnect(){if(this.es){this.es.close();this.es=null;}},
+  startSDK(){
+    try{
+      const app=firebase.apps.length?firebase.app():firebase.initializeApp({databaseURL:dbURL()});
+      this.db=firebase.database(app);this.mode='sdk';
+      this.db.ref('.info/connected').on('value',s=>{if(this.mode!=='sdk')return;s.val()?this.setStatus('live','Live'):this.setStatus(this.got?'warn':'warn',this.got?'Reconnecting…':'Connecting…');});
+      this.ref('').on('value',snap=>{if(this.mode==='sdk')this.apply(snap.val());},
+        ()=>{this.setStatus('err','No permission');toast('⚠️ Firebase rules are blocking the league. See Setup.');});
+      // if nothing arrives in 8 s, switch to the backup connection
+      setTimeout(()=>{if(!this.got&&this.mode==='sdk'){try{this.ref('').off();this.db.goOffline();}catch(e){}this.startREST();}},8000);
+    }catch(e){this.startREST();}
+  },
+  startREST(){
+    this.mode='rest';
+    this.poll(0); // get the league right away, don't wait for the stream
+    const open=()=>{
+      try{this.es&&this.es.close();}catch(e){}
+      let es;try{es=new EventSource(this.url(''));}catch(e){return;}
+      this.es=es;this.lastEv=0;this.openedAt=Date.now(); // the stream only counts once it actually delivers something
+      const handle=(type,e)=>{
+        this.lastEv=Date.now();
+        let msg;try{msg=JSON.parse(e.data);}catch(_){return;}
+        if(!msg)return;
+        if(type==='put'&&msg.path==='/'){this.apply(msg.data);this.setStatus('live','Live');return;}
+        if(!this.got)return; // a full copy comes first
+        const before=loaded?champMap():null;
+        if(type==='put')setPath(D,msg.path,msg.data);
+        else{const base=msg.path==='/'?'':msg.path;Object.keys(msg.data||{}).forEach(k=>setPath(D,base+'/'+k,msg.data[k]));}
+        D=normalize(D);this.setStatus('live','Live');
+        scheduleRemote(before);
+      };
+      es.addEventListener('put',e=>handle('put',e));
+      es.addEventListener('patch',e=>handle('patch',e));
+      es.addEventListener('keep-alive',()=>{this.lastEv=Date.now();});
+      es.addEventListener('cancel',()=>{this.setStatus('err','No permission');toast('⚠️ Firebase rules are blocking the league. See Setup.');});
+      es.onerror=()=>{if(es.readyState===2)setTimeout(open,3000);};
+    };
+    open();
+    // watchdog: Firebase sends a keep-alive every ~30 s; if the stream is quiet, re-check and reopen it
+    clearInterval(this.wd);
+    this.wd=setInterval(()=>{if(document.hidden)return;if(!this.streamOk()){this.poll(0);if(Date.now()-Math.max(this.lastEv,this.openedAt||0)>60000)open();}},4000);
+  },
+  streamOk(){return this.mode==='rest'&&Date.now()-this.lastEv<45000;},
+  poll(delay){
+    clearTimeout(this.pollT);
+    this.pollT=setTimeout(()=>{
+      fetch(this.url(''),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+        .then(data=>{if(typingNow()&&this.got)return;this.apply(data);if(!this.streamOk())this.setStatus('live','Live');})
+        .catch(()=>{this.setStatus('err','Offline');});
+    },delay||0);
+  },
+  disconnect(){try{this.es&&this.es.close();}catch(e){}clearInterval(this.wd);if(this.db){try{this.ref('').off();this.db.goOffline();}catch(e){}}this.mode=null;this.got=false;},
   setStatus(s,txt){this.status=s;renderStatus(txt);}
 };
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Sync.mode==='rest'&&!Sync.streamOk())Sync.poll(0);});
 function onLoaded(empty){
   if(empty){ // brand-new league
     const local=localData();
     const up=local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('The tropa league is empty. Upload the players, brackets and matches saved on this device?');
     const d=up?local:defaultData();
-    Object.keys(D.players).forEach(id=>{if(!d.players[id])d.players[id]=D.players[id];}); // keep anyone who signed up meanwhile
+    Object.keys(D.players).forEach(id=>{if(!d.players[id])d.players[id]=D.players[id];});
     Sync.replaceAll(d);
   }else if(!G().length){
     DEFAULT_GAMES.forEach((n,i)=>{const id='g_'+n.toLowerCase().replace(/[^a-z0-9]+/g,'');Sync.put('/games/'+id,{id,name:n,order:i});});
@@ -958,9 +1026,9 @@ function afterRemote(before){
   renderAll();
 }
 document.addEventListener('focusout',()=>{if(pendingRender)setTimeout(flushPending,0);});
-function heartbeat(){if(me()&&loaded&&isOnline())Sync.put('/presence/'+me(),{ts:Date.now()});}
+function heartbeat(){if(me()&&loaded&&isOnline()&&Sync.got)Sync.put('/presence/'+me(),{ts:Date.now()});}
 setInterval(heartbeat,60000);
-const pageLink=()=>location.href.split('#')[0].split('?')[0];
+const pageLink=()=>{const base=location.href.split('#')[0].split('?')[0];return !FIREBASE_DB_URL&&U.dbLocal?base+'?db='+encodeURIComponent(U.dbLocal):base;};
 function copyLink(){
   const link=pageLink();
   const done=()=>toast('🔗 Link copied! Send it to the tropa.');
@@ -1020,7 +1088,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#connBtn')){
     const v=($('#dbIn').value||'').trim();
     if(!validDb(v)){alert('Paste your Firebase Realtime Database URL (e.g. https://xxxx-default-rtdb.firebaseio.com).');return;}
-    U.dbLocal=v.replace(/\/+$/,'');saveU();loaded=false;D=normalize(loadJSON(cacheKey())||{});renderAll();Sync.connect();
+    Sync.disconnect();U.dbLocal=v.replace(/\/+$/,'');saveU();loaded=false;D=normalize(loadJSON(cacheKey())||{});renderAll();Sync.connect();
   }
   if(e.target.closest('#discBtn')){
     if(!confirm('Disconnect this device from the online league?'))return;
@@ -1029,11 +1097,29 @@ document.addEventListener('click',e=>{
 });
 
 /* ---------- ACCOUNTS ---------- */
-async function hashPin(id,pin){
-  const txt='ps4tropa:'+id+':'+pin;
-  try{const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
-  catch(e){let h=2166136261;for(const c of txt){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0;}return 'f'+h.toString(16);}
+function sha256(ascii){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  var maxWord=Math.pow(2,32),result='',words=[],bitLen=ascii.length*8,hash=[],k=[],pc=0,comp={},i,j;
+  for(var c=2;pc<64;c++){if(!comp[c]){for(i=0;i<313;i+=c)comp[i]=c;hash[pc]=(Math.pow(c,.5)*maxWord)|0;k[pc++]=(Math.pow(c,1/3)*maxWord)|0;}}
+  hash=hash.slice(0,8);ascii+='\x80';
+  while(ascii.length%64-56)ascii+='\x00';
+  for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return '';words[i>>2]|=j<<((3-i)%4)*8;}
+  words[words.length]=((bitLen/maxWord)|0);words[words.length]=bitLen;
+  for(j=0;j<words.length;){
+    var w=words.slice(j,j+=16),old=hash;hash=hash.slice(0,8);
+    for(i=0;i<64;i++){
+      var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+      var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+      var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+      hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;
+    }
+    for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0;
+  }
+  for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
+  return result;
 }
+// same result on every phone and browser (no reliance on crypto.subtle)
+async function hashPin(id,pin){return sha256('ps4tropa:'+id+':'+pin);}
 let authSel=null,authMode='login';
 function openAuth(mode){authMode=mode||'login';authSel=null;$('#auth').hidden=false;renderAuth();}
 function closeAuth(){$('#auth').hidden=true;}
@@ -1041,6 +1127,7 @@ function login(id){U.me=id;U.guest=false;saveU();closeAuth();setTab('home');rend
 function renderAuth(){
   if($('#auth').hidden)return;
   $('#authTitle').textContent=D.meta.title||'PS4 Tropa League';
+  $('#authSub').innerHTML=isOnline()?'Log in to join the league':'<span style="color:#ffe3a3">⚠️ This page isn’t online yet, so accounts made here stay on this device only. The admin needs to finish Setup → Firebase.</span>';
   $$('[data-auth]').forEach(b=>b.classList.toggle('active',b.dataset.auth===authMode));
   $('#authLogin').hidden=authMode!=='login';$('#authSignup').hidden=authMode!=='signup';
   $('#authLoading').textContent=!loaded?(Sync.status==='err'?'Can’t reach the league. Check your internet.':'Connecting to the tropa league…'):(P().length?'Tap your name':'No players yet. Create the first account!');
@@ -1167,7 +1254,10 @@ function setTab(t){
 const playerUsed=id=>Object.values(D.matches).some(m=>m.p1===id||m.p2===id)||B().some(b=>b.players.includes(id))||C().some(m=>m.from===id||m.to===id);
 const gameUsed=id=>Object.values(D.matches).some(m=>m.game===id)||B().some(b=>b.game===id);
 function renderSetup(){
-  $('#pList').innerHTML=P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.pin?' 🔒':''}</button>${p.pin?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}<button class="chip-x" data-del-p="${p.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>';
+  const adm=isAdmin(),admId=D.meta.admin&&D.players[D.meta.admin]&&!D.players[D.meta.admin].removed?D.meta.admin:'';
+  $('#pList').innerHTML=(P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.id===admId?' 👑':''}${p.pin?' 🔒':''}</button>${adm&&p.id!==me()?`<button class="chip-x" data-mk-admin="${p.id}" title="Make ${esc(p.name)} the admin">👑</button>`:''}${adm&&p.pin?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}${adm&&p.id!==me()?`<button class="chip-x" data-del-p="${p.id}" title="Remove player">✕</button>`:''}</span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>')
+    +(!admId&&me()?`<div style="width:100%;margin-top:8px"><button class="btn sm" id="claimAdmin">👑 Become the league admin</button></div>`:'')
+    +(admId?`<div class="small muted" style="width:100%;margin-top:6px">👑 Admin: <b>${esc(pName(admId))}</b>${adm?' (you)':''}</div>`:'');
   $('#gList').innerHTML=G().length?G().map(g=>`<span class="chip"><button class="chip-name" data-ren-g="${g.id}" title="Rename">🎮 ${esc(g.name)}</button><button class="chip-x" data-del-g="${g.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No games yet.</span>';
   renderSync();
 }
@@ -1680,7 +1770,7 @@ function showChampion(b){
 }
 
 function renderAll(){
-  if(U.me&&!D.players[U.me]&&loaded){U.me='';saveU();}
+  if(U.me&&(!D.players[U.me]||D.players[U.me].removed)&&loaded&&(!isOnline()||Sync.got)){U.me='';saveU();}
   renderHeader();renderHome();renderSetup();renderBracketCreate();renderBracketView();renderNews();renderHall();renderStandings();renderTalk();renderLog();renderAuth();refreshModal();
 }
 
@@ -1721,12 +1811,14 @@ $('#authGo').addEventListener('click',doLogin);
 async function doSignup(){
   const name=$('#suName').value.trim().slice(0,24),pin=$('#suPin').value.trim();
   if(!name){toast('Enter your name.');return;}
+  if(isOnline()&&!Sync.got){toast(Sync.status==='err'?'Can’t reach the league. Check your internet and try again.':'Still connecting to the league… try again in a moment.');return;}
   const ex=P().find(p=>p.name.toLowerCase()===name.toLowerCase());
   if(ex){toast(ex.pin?'That name is taken. Log in instead.':'That name already exists. Tap it on the Log In tab to claim it.');authMode='login';authSel=ex.pin?null:ex.id;renderAuth();return;}
   if(!/^\d{4,6}$/.test(pin)){toast('PIN must be 4–6 digits.');return;}
   if(pin!==$('#suPin2').value.trim()){toast('PINs don’t match.');return;}
   const id=uid();
   Sync.put('/players/'+id,{id,name,order:Date.now(),pin:await hashPin(id,pin)});
+  if(!D.meta.admin)Sync.put('/meta/admin',id); // the first account runs the league
   $('#suName').value=$('#suPin').value=$('#suPin2').value='';
   login(id);
 }
@@ -1752,14 +1844,20 @@ function addPlayers(){
 $('#pAdd').addEventListener('click',addPlayers);
 $('#pIn').addEventListener('keydown',e=>{if(e.key==='Enter')addPlayers();});
 $('#pList').addEventListener('click',e=>{
-  const r=e.target.closest('[data-ren-p]'),d=e.target.closest('[data-del-p]'),c=e.target.closest('[data-clr-p]');
-  if((r||d||c)&&!requireLogin())return;
-  if(r){const p=D.players[r.dataset.renP];const n=prompt('New name:',p.name);if(n&&n.trim()){Sync.put('/players/'+p.id+'/name',n.trim().slice(0,24));renderAll();}}
+  if(e.target.closest('#claimAdmin')){if(!requireLogin())return;if(D.meta.admin&&D.players[D.meta.admin]&&!D.players[D.meta.admin].removed){toast('The league already has an admin.');return;}Sync.put('/meta/admin',me());renderAll();toast('👑 You are now the league admin.');return;}
+  const r=e.target.closest('[data-ren-p]'),d=e.target.closest('[data-del-p]'),c=e.target.closest('[data-clr-p]'),a=e.target.closest('[data-mk-admin]');
+  if((r||d||c||a)&&!requireLogin())return;
+  if((d||c||a)&&!isAdmin()){toast('Only the admin can do that.');return;}
+  if(r){const p=D.players[r.dataset.renP];if(p.id!==me()&&p.pin&&!isAdmin()){toast('Only the admin can rename someone else’s account.');return;}
+    const n=prompt('New name:',p.name);if(n&&n.trim()){Sync.put('/players/'+p.id+'/name',n.trim().slice(0,24));renderAll();}}
+  if(a){const id=a.dataset.mkAdmin;if(confirm(`Make ${pName(id)} the league admin? You will no longer be admin.`)){Sync.put('/meta/admin',id);renderAll();}}
   if(c){const id=c.dataset.clrP;if(confirm(`Clear ${pName(id)}'s PIN? They'll set a new one the next time they log in.`)){Sync.del('/players/'+id+'/pin');renderAll();}}
-  if(d){const id=d.dataset.delP;
-    if(playerUsed(id)){alert(`Can't remove ${pName(id)}: they already have matches or messages. You can rename them instead.`);return;}
-    if(!confirm(`Remove ${pName(id)}?`))return;
-    Sync.del('/players/'+id);excluded.delete(id);renderAll();}
+  if(d){const id=d.dataset.delP,n=pName(id);
+    if(playerUsed(id)){
+      if(!confirm(`Remove ${n} from the league?\n\nThey can't log in anymore and won't appear in the standings, brackets or player lists. Their past matches stay in the history.`))return;
+      const p=Object.assign({},D.players[id],{removed:true});delete p.pin;Sync.put('/players/'+id,p);
+    }else{if(!confirm(`Remove ${n}?`))return;Sync.del('/players/'+id);}
+    excluded.delete(id);renderAll();toast(`${n} was removed.`);}
 });
 // games
 function addGame(){
