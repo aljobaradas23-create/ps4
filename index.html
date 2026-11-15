@@ -466,6 +466,63 @@ code{background:#10061c;border:1px solid var(--line);border-radius:5px;padding:1
   .champ-plate{background:#efe7fb!important;color:#000}
   .champ-plate.on{background:#ffe9a8!important}
 }
+
+/* ================= LEAGUE HOME ================= */
+.home-hero{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);min-height:230px;margin-bottom:16px;background-color:#170a2b;background-size:cover;background-position:right center;display:flex;align-items:center}
+.home-hero .in{padding:26px 28px;max-width:700px}
+.home-hero h2{font-family:'Russo One',Rajdhani,sans-serif;font-size:clamp(28px,4vw,46px);margin:0;color:#f3e8ff;text-shadow:0 0 14px #a855f7;line-height:1.05}
+.home-hero .wel{color:#dccbf6;margin:8px 0 14px;font-size:15px}
+.home-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px}
+.home-grid>.card{margin-bottom:0}
+@media (max-width:900px){.home-grid{grid-template-columns:1fr}}
+.mrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#1a0c30;margin-bottom:8px;cursor:pointer;transition:.15s}
+.mrow:hover{border-color:#c084fc;box-shadow:0 0 12px rgba(192,132,252,.35)}
+.mrow .mm{flex:1;min-width:0}
+.mrow .mt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .ms{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .sc{font-family:'Russo One',Rajdhani,sans-serif;font-size:16px;color:#ead7ff;white-space:nowrap}
+.mrow .np{font-size:18px}
+tr.clickrow{cursor:pointer}
+tr.clickrow:hover td{background:rgba(139,61,255,.13)}
+.tline{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(64,36,106,.6);font-size:14px;align-items:flex-start}
+.tline:last-of-type{border:0}
+.tline .av{width:30px;height:30px;font-size:14px}
+.tline .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.tline .who{font-weight:700}.tline .to{color:#ff8a96;font-weight:600}
+.prow{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px}
+.prow .muted{margin-left:auto;font-size:12px}
+.dot-on,.dot-off{width:9px;height:9px;border-radius:50%;flex:none}
+.dot-on{background:#2ee6b0;box-shadow:0 0 8px #2ee6b0}.dot-off{background:#4a3a66}
+
+/* ================= NEWSPAPER: AFTER THE FINAL (under the photo) ================= */
+.after-final{border:2px solid #1d1a16;padding:10px 14px;margin:0 0 12px;background:rgba(255,255,255,.35)}
+.af-head{font:900 18px 'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1d1a16;padding-bottom:4px;margin-bottom:8px}
+.af-say{margin:0 0 6px;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:21px;line-height:1.3}
+.af-say cite{display:block;font:700 10.5px Inter,sans-serif;font-style:normal;letter-spacing:1px;text-transform:uppercase;margin-top:6px}
+.af-wait{font-style:italic;font-size:13px;color:#5b5346;margin:0 0 6px}
+.af-edit textarea{width:100%;min-height:66px;border:1px solid #1d1a16;border-radius:4px;background:#fffdf6;color:#1d1a16;font:15px 'Libre Baskerville',Georgia,serif;padding:8px;resize:vertical}
+.af-edit .row{margin-top:6px}
+.af-edit .btn{background:#1d1a16;border-color:#1d1a16;color:#f3ecda}
+.af-sub{font:700 10.5px Inter,sans-serif;letter-spacing:1.2px;text-transform:uppercase;margin:10px 0 4px;color:#3a342b}
+.af-r{font-size:13.5px;line-height:1.5;margin:0 0 5px}
+.af-r b{font-family:'Playfair Display',Georgia,serif}
+.news .linkbtn{color:#1d1a16;font-size:12px}
+.np-img.wide{padding:0}
+.np-img.wide img{width:100%;height:auto;display:block;filter:grayscale(.55) sepia(.25) contrast(1.05)}
+
+/* ================= NEWSPAPER MODAL ================= */
+.nmodal{position:fixed;inset:0;z-index:95;background:rgba(6,2,14,.9);overflow:auto;padding:22px 14px}
+.nmodal-bar{max-width:1000px;margin:0 auto 10px;display:flex;justify-content:flex-end;gap:8px}
+
+@media print{
+  body.print-modal .wrap,body.print-modal .toast,body.print-modal .celebrate,body.print-modal .auth{display:none!important}
+  body.print-modal #newsModal{display:block!important;position:static;background:none;padding:0;overflow:visible}
+  body:not(.print-modal) #newsModal{display:none!important}
+  .nmodal-bar,.af-edit,.af-wait,.af-tools{display:none!important}
+  .news{page:news}
+}
+
+.side-box .tape td:not(:first-child){text-align:right;font-weight:700}
 </style>
 </head>
 <body>
@@ -484,19 +541,33 @@ code{background:#10061c;border:1px solid var(--line);border-radius:5px;padding:1
     <div class="actions">
       <span class="status" id="status"><span class="dot"></span><span id="statusTx">Local only</span></span>
       <span id="userArea"></span>
-      <button class="btn ghost" id="shareBtn" hidden title="Copy the link to this page">🔗 Share</button>
+      <button class="btn ghost" id="shareBtn" title="Copy the link to this page">🔗 Share</button>
       <button class="btn ghost" id="printBtn" title="Print the current tab">🖨️ Print Tab</button>
       <button class="btn" id="printAllBtn" title="Bracket + Standings + Match Log">🖨️ Print All</button>
     </div>
   </header>
 
   <nav class="tabs">
+    <button class="tab" data-tab="home">🏠 League</button>
     <button class="tab" data-tab="bracket"><img class="ico" data-img="sm" alt=""> Bracket</button>
     <button class="tab" data-tab="standings">📊 Standings</button>
     <button class="tab" data-tab="talk">🔥 Trash Talk <span id="talkBadge"></span></button>
     <button class="tab" data-tab="log">🎮 Match Log</button>
     <button class="tab" data-tab="setup">⚙️ Setup</button>
   </nav>
+
+  <!-- ================= LEAGUE HOME ================= -->
+  <section id="sec-home" class="section">
+    <div class="home-hero" id="homeHero"></div>
+    <div class="home-grid">
+      <div class="card"><h3>🎮 Recent Matches <span class="small muted">tap a match to read its newspaper</span></h3><div id="homeMatches"></div></div>
+      <div class="card"><h3>🔥 Recent Trash Talk</h3><div id="homeTalk"></div><div style="margin-top:10px"><button class="btn ghost sm" data-goto="talk">Open Trash Talk →</button></div></div>
+    </div>
+    <div class="home-grid">
+      <div class="card"><h3>📊 Top of the Table</h3><div id="homeTable"></div></div>
+      <div class="card"><h3>👥 The Tropa</h3><div id="homePlayers"></div></div>
+    </div>
+  </section>
 
   <!-- ================= BRACKET ================= -->
   <section id="sec-bracket" class="section printable">
@@ -594,7 +665,7 @@ code{background:#10061c;border:1px solid var(--line);border-radius:5px;padding:1
         <label>Winner<select id="lgWin"></select></label>
         <button class="btn" id="lgSave">💾 Save</button>
       </div>
-      <p class="hint">Enter the scores and the winner is picked automatically. You can also skip the score and just choose who won.</p>
+      <p class="hint">Enter the scores and the winner is picked automatically. You can also skip the score and just choose who won. Tap any match below to read its newspaper.</p>
     </div>
     <div class="card">
       <div class="row between" style="margin-bottom:10px">
@@ -682,6 +753,11 @@ code{background:#10061c;border:1px solid var(--line);border-radius:5px;padding:1
   </div>
 </div>
 
+<div class="nmodal" id="newsModal" hidden>
+  <div class="nmodal-bar"><button class="btn" id="nmPrint">🖨️ Print</button><button class="btn ghost" id="nmClose">✕ Close</button></div>
+  <div id="nmBody"></div>
+</div>
+
 <div class="celebrate" id="celebrate" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="cel-card">
@@ -691,6 +767,7 @@ code{background:#10061c;border:1px solid var(--line);border-radius:5px;padding:1
     <div class="cel-name" id="celName"></div>
     <div class="cel-sub" id="celSub"></div>
     <div class="row">
+      <button class="btn" id="celSay" hidden>✍️ Write your after-final statement</button>
       <button class="btn" id="celNews">📰 Read the Newspaper</button>
       <button class="btn ghost" id="celClose">Close</button>
     </div>
@@ -701,15 +778,18 @@ code{background:#10061c;border:1px solid var(--line);border-radius:5px;padding:1
 (function(){
 'use strict';
 /* ==========================================================
-   ONLINE LEAGUE: paste your Firebase Realtime Database URL
-   between the quotes, then upload this file to GitHub.
-   Everyone who opens the page joins the same league.
-   (Or use Setup → "Download index.html" to do it for you.)
+   ONE SHARED LEAGUE, NO SETUP
+   Everyone who opens this page joins the same league, synced
+   live through a free public real-time server (EMQX MQTT).
+   Change LEAGUE_ID only if you want a brand-new, empty league.
    ========================================================== */
-const FIREBASE_DB_URL='';
+const LEAGUE_ID='tropa-league-7f3k9q2xw8';
+const MQTT_URL='wss://broker.emqx.io:8084/mqtt';
+const MQTT_LIBS=['https://unpkg.com/mqtt@5/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js'];
+const BASE='ps4tropa/'+LEAGUE_ID;
+const COLS=['meta','players','games','matches','brackets','chat','presence'];
 
-const DATA_KEY='ps4-tropa-league-v2', UI_KEY='ps4-tropa-ui-v3', OLD_KEY='ps4-tropa-league-v1';
-const DB_NODE='tropa';
+const DATA_KEY='ps4-tropa-league-v2', UI_KEY='ps4-tropa-ui-v4', OLD_KEY='ps4-tropa-league-v1';
 const SHAPES=[{s:'△',c:'var(--tri)'},{s:'○',c:'var(--cir)'},{s:'✕',c:'var(--crs)'},{s:'□',c:'var(--sq)'}];
 
 /* ---------- embedded images ---------- */
@@ -738,7 +818,7 @@ const fmtTime=ts=>new Date(ts).toLocaleString(undefined,{month:'short',day:'nume
 
 /* ---------- data model ---------- */
 const DEFAULT_GAMES=['EA Sports FC / FIFA','NBA 2K','Tekken 7','Mortal Kombat 11','Street Fighter V','Crash Team Racing','Call of Duty'];
-function defaultData(){const g={};DEFAULT_GAMES.forEach((n,i)=>{const id=uid();g[id]={id,name:n,order:i};});return {meta:{title:'PS4 Tropa League'},players:{},games:g,matches:{},brackets:{},chat:{}};}
+function defaultData(){const g={};DEFAULT_GAMES.forEach((n,i)=>{const id=uid();g[id]={id,name:n,order:i};});return {meta:{title:'PS4 Tropa League'},players:{},games:g,matches:{},brackets:{},chat:{},presence:{}};}
 const arr=x=>Array.isArray(x)?x.filter(v=>v!=null):(x&&typeof x==='object'?Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]).filter(v=>v!=null):[]);
 function normBracket(b){
   b.bo=+b.bo||1;b.boFinal=+b.boFinal||b.bo;b.players=arr(b.players);
@@ -749,7 +829,7 @@ function normBracket(b){
 }
 function normalize(d){
   d=d&&typeof d==='object'?d:{};
-  const o={meta:Object.assign({title:'PS4 Tropa League'},d.meta||{}),players:d.players||{},games:d.games||{},matches:d.matches||{},brackets:d.brackets||{},chat:d.chat||{}};
+  const o={meta:Object.assign({title:'PS4 Tropa League'},d.meta||{}),players:d.players||{},games:d.games||{},matches:d.matches||{},brackets:d.brackets||{},chat:d.chat||{},presence:d.presence||{}};
   Object.values(o.brackets).forEach(normBracket);
   return o;
 }
@@ -762,23 +842,17 @@ function fromV1(o){
   return d;
 }
 
-let U=Object.assign({tab:'bracket',stGame:'all',lgFilter:'all',currentBracket:null,lastGame:null,me:'',guest:false,dbLocal:'',lastSeenChat:0},loadJSON(UI_KEY)||{});
+let U=Object.assign({tab:'home',stGame:'all',lgFilter:'all',currentBracket:null,lastGame:null,me:'',guest:false,lastSeenChat:0},loadJSON(UI_KEY)||{});
 const saveU=()=>saveJSON(UI_KEY,U);
-const dbURL=()=>(FIREBASE_DB_URL||U.dbLocal||'').replace(/\/+$/,'');
-const isOnline=()=>!!dbURL();
-const cacheKey=()=>isOnline()?DATA_KEY+':online':DATA_KEY;
-function localData(){
+const cacheKey=()=>DATA_KEY+':'+LEAGUE_ID;
+function localData(){ // data from older single-device versions
   const c=loadJSON(DATA_KEY);if(c)return normalize(c);
   const o=loadJSON(OLD_KEY);if(o&&Array.isArray(o.players))return normalize(fromV1(o));
   return null;
 }
-function loadInitial(){
-  const c=loadJSON(cacheKey());if(c)return normalize(c);
-  if(isOnline())return normalize({});
-  return localData()||normalize(defaultData());
-}
-let D=loadInitial();
-let loaded=!isOnline()||!!loadJSON(cacheKey());
+const hasCache=!!loadJSON(cacheKey());
+let D=normalize(loadJSON(cacheKey())||{});
+let loaded=false;            // true once the league has been received from the server
 const cache=()=>saveJSON(cacheKey(),D);
 
 const byOrder=(a,b)=>(a.order||0)-(b.order||0);
@@ -807,67 +881,105 @@ function setPath(root,path,val){
   if(val===null||val===undefined){if(Array.isArray(o))o[k]=undefined;else delete o[k];}else o[k]=val;
 }
 
-/* ---------- SYNC: one shared league on Firebase Realtime Database ---------- */
+/* ---------- SYNC: one shared league over MQTT (each record = one retained message) ---------- */
 const Sync={
-  es:null,status:'local',
-  url(p){return `${dbURL()}/${DB_NODE}${p||''}.json`;},
-  write(method,p,val){
-    if(!isOnline())return Promise.resolve();
-    return fetch(this.url(p),{method,body:val===undefined?undefined:JSON.stringify(val)})
-      .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);})
-      .catch(()=>{toast('⚠️ Sync failed. Check your internet or the Firebase rules.');this.setStatus('err');});
+  client:null,status:'warn',queue:[],lt:null,
+  rec(path){return String(path).split('/').filter(Boolean).slice(0,2);},
+  send(topic,payload){
+    if(this.client&&this.client.connected)this.client.publish(topic,payload,{qos:1,retain:true});
+    else this.queue.push([topic,payload]);
   },
-  put(p,val){setPath(D,p,val);cache();this.write('PUT',p,val);},
-  del(p){setPath(D,p,null);cache();this.write('DELETE',p);},
-  replaceAll(obj){D=normalize(obj);cache();return this.write('PUT','',D);},
+  pub(col,id){
+    if(!col||!id)return;
+    const v=D[col]?D[col][id]:undefined;
+    this.send(BASE+'/'+col+'/'+id,v==null?'':JSON.stringify(v));
+  },
+  put(path,val){setPath(D,path,val);D=normalize(D);cache();const [c,id]=this.rec(path);this.pub(c,id);},
+  del(path){setPath(D,path,null);D=normalize(D);cache();const [c,id]=this.rec(path);this.pub(c,id);},
+  replaceAll(obj){
+    const old=D;D=normalize(obj);cache();
+    COLS.forEach(c=>{
+      Object.keys(old[c]||{}).forEach(id=>{if(!(id in (D[c]||{})))this.send(BASE+'/'+c+'/'+id,'');});
+      Object.keys(D[c]||{}).forEach(id=>this.pub(c,id));
+    });
+  },
+  armLoaded(){
+    if(loaded)return;
+    clearTimeout(this.lt);
+    this.lt=setTimeout(()=>{loaded=true;this.setStatus('live');onLoaded();},1300);
+  },
   connect(){
-    this.disconnect();
-    if(!isOnline()){this.setStatus('local');return;}
-    this.setStatus('warn','Connecting…');
-    let es;try{es=new EventSource(this.url(''));}catch(e){this.setStatus('err');return;}
-    this.es=es;let first=true;
-    const handle=(type,e)=>{
-      let msg;try{msg=JSON.parse(e.data);}catch(_){return;}
-      if(!msg)return;
-      const before=champMap();
-      if(type==='put'){if(msg.path==='/')D=normalize(msg.data||{});else setPath(D,msg.path,msg.data);}
-      else{const base=msg.path==='/'?'':msg.path;Object.keys(msg.data||{}).forEach(k=>setPath(D,base+'/'+k,msg.data[k]));}
+    if(typeof mqtt==='undefined'){this.setStatus('err','Offline');return;}
+    const c=mqtt.connect(MQTT_URL,{clientId:'ps4tl_'+uid()+uid(),clean:true,keepalive:30,reconnectPeriod:3000,connectTimeout:12000});
+    this.client=c;
+    c.on('connect',()=>{
+      this.setStatus(loaded?'live':'warn',loaded?'':'Syncing…');
+      c.subscribe(BASE+'/#',{qos:1},()=>{this.armLoaded();});
+      const q=this.queue;this.queue=[];q.forEach(([t,p])=>c.publish(t,p,{qos:1,retain:true}));
+    });
+    c.on('message',(topic,payload)=>{
+      const rest=topic.slice(BASE.length+1).split('/');
+      if(rest.length!==2||!COLS.includes(rest[0]))return;
+      const [col,id]=rest;
+      const before=loaded?champMap():null;
+      const txt=payload?payload.toString():'';
+      let val=null;if(txt){try{val=JSON.parse(txt);}catch(e){return;}}
+      if(!D[col]||typeof D[col]!=='object')D[col]={};
+      if(val==null)delete D[col][id];else D[col][id]=val;
       D=normalize(D);
-      const wasFirst=first;first=false;
-      if(wasFirst&&msg.path==='/'&&!msg.data){ // brand-new league
-        const local=localData();
-        const up=local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('This online league is empty. Upload the players, brackets and matches saved on this device?');
-        this.replaceAll(up?local:defaultData());
-      }
-      loaded=true;this.setStatus('live');
-      afterRemote(wasFirst?null:before);
-    };
-    es.addEventListener('put',e=>handle('put',e));
-    es.addEventListener('patch',e=>handle('patch',e));
-    es.addEventListener('cancel',()=>{this.setStatus('err','No permission');toast('⚠️ Firebase rules are blocking access. See Setup.');});
-    es.onopen=()=>{if(this.status!=='live')this.setStatus('warn','Syncing…');};
-    es.onerror=()=>this.setStatus(es.readyState===2?'err':'warn',es.readyState===2?'Offline':'Reconnecting…');
+      this.armLoaded();
+      scheduleRemote(before);
+    });
+    c.on('reconnect',()=>this.setStatus('warn','Reconnecting…'));
+    c.on('offline',()=>this.setStatus('err','Offline'));
+    c.on('error',()=>{});
   },
-  disconnect(){if(this.es){this.es.close();this.es=null;}},
   setStatus(s,txt){this.status=s;renderStatus(txt);}
 };
+function loadMqttLib(i){
+  i=i||0;
+  if(typeof mqtt!=='undefined'){Sync.connect();return;}
+  if(i>=MQTT_LIBS.length){Sync.setStatus('err','Offline');if(hasCache){loaded=true;}renderAll();return;}
+  const sc=document.createElement('script');sc.src=MQTT_LIBS[i];
+  sc.onload=()=>Sync.connect();sc.onerror=()=>loadMqttLib(i+1);
+  document.head.appendChild(sc);
+}
+function onLoaded(){
+  if(!G().length&&!P().length){ // brand-new league
+    const local=localData();
+    const up=local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('The tropa league is empty. Upload the players, brackets and matches saved on this device?');
+    Sync.replaceAll(up?local:defaultData());
+  }
+  renderAll();
+  heartbeat();
+}
 function renderStatus(txt){
   $('#status').className='status '+({live:'live',warn:'warn',err:'err'}[Sync.status]||'');
-  $('#statusTx').textContent=txt||(Sync.status==='live'?'Live':Sync.status==='err'?'Sync error':Sync.status==='warn'?'Connecting…':'Local only');
-  $('#shareBtn').hidden=!isOnline();
+  $('#statusTx').textContent=txt||(Sync.status==='live'?'Live':Sync.status==='err'?'Offline':'Connecting…');
 }
-// don't re-render under someone's fingers: wait while they're actively typing a score
-let pendingRender=false,lastKey=0;
-document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#bracketView'))lastKey=Date.now();});
-const typingInBracket=()=>{const a=document.activeElement;return !!(a&&a.matches&&a.matches('#bracketView input'))&&Date.now()-lastKey<2500;};
-function flushPending(){if(!pendingRender)return;if(typingInBracket()){setTimeout(flushPending,1500);return;}pendingRender=false;renderAll();}
+// don't re-render under someone's fingers (score boxes, unsent newspaper statement)
+let pendingRender=false,lastKey=0,remoteTimer=null,remoteBefore=null;
+document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#bracketView,.af-edit'))lastKey=Date.now();});
+const typingNow=()=>{
+  const a=document.activeElement;if(!a||!a.matches)return false;
+  if(a.matches('.af-edit textarea'))return a.value.trim().length>0||Date.now()-lastKey<2500;
+  return a.matches('#bracketView input')&&Date.now()-lastKey<2500;
+};
+function flushPending(){if(!pendingRender)return;if(typingNow()){setTimeout(flushPending,1500);return;}pendingRender=false;renderAll();}
+function scheduleRemote(before){
+  if(before&&!remoteBefore)remoteBefore=before;
+  clearTimeout(remoteTimer);
+  remoteTimer=setTimeout(()=>{const b=remoteBefore;remoteBefore=null;afterRemote(b);},120);
+}
 function afterRemote(before){
   cache();
   if(before)B().forEach(b=>{if(b.champion&&(b.id in before)&&before[b.id]!==b.champion)showChampion(b);});
-  if(typingInBracket()){if(!pendingRender)setTimeout(flushPending,1500);pendingRender=true;renderAuth();return;}
+  if(typingNow()){if(!pendingRender)setTimeout(flushPending,1500);pendingRender=true;renderAuth();return;}
   renderAll();
 }
 document.addEventListener('focusout',()=>{if(pendingRender)setTimeout(flushPending,0);});
+function heartbeat(){if(me()&&loaded)Sync.put('/presence/'+me(),{ts:Date.now()});}
+setInterval(heartbeat,60000);
 const pageLink=()=>location.href.split('#')[0].split('?')[0];
 function copyLink(){
   const link=pageLink();
@@ -885,13 +997,13 @@ async function hashPin(id,pin){
 let authSel=null,authMode='login';
 function openAuth(mode){authMode=mode||'login';authSel=null;$('#auth').hidden=false;renderAuth();}
 function closeAuth(){$('#auth').hidden=true;}
-function login(id){U.me=id;U.guest=false;saveU();closeAuth();renderAll();toast(`Welcome, ${pName(id)}! 🎮`);}
+function login(id){U.me=id;U.guest=false;saveU();closeAuth();setTab('home');renderAll();heartbeat();toast(`Welcome to the league, ${pName(id)}! 🎮`);}
 function renderAuth(){
   if($('#auth').hidden)return;
   $('#authTitle').textContent=D.meta.title||'PS4 Tropa League';
   $$('[data-auth]').forEach(b=>b.classList.toggle('active',b.dataset.auth===authMode));
   $('#authLogin').hidden=authMode!=='login';$('#authSignup').hidden=authMode!=='signup';
-  $('#authLoading').textContent=!loaded?'Loading the league…':(P().length?'Tap your name':'No players yet. Create the first account!');
+  $('#authLoading').textContent=!loaded?(Sync.status==='err'?'Can’t reach the league server. Check your internet.':'Connecting to the tropa league…'):(P().length?'Tap your name':'No players yet. Create the first account!');
   $('#authPlayers').innerHTML=P().map(p=>`<button class="pcard ${authSel===p.id?'on':''}" data-pick-acc="${p.id}">${avatar(p.id)}${esc(p.name)}<small>${p.pin?'🔒 account':'tap to claim'}</small></button>`).join('');
   const p=D.players[authSel];
   $('#authPinBox').hidden=!p;
@@ -966,11 +1078,11 @@ function saveBracket(b){Sync.put('/brackets/'+b.id,b);renderAll();}
 /* ---------- RESULTS ---------- */
 function allResults(g){
   const out=[];
-  Object.values(D.matches).forEach(m=>{if(m&&m.p1)out.push(Object.assign({},m,{kind:'log',src:'Match Log',detail:''}));});
+  Object.values(D.matches).forEach(m=>{if(m&&m.p1)out.push(Object.assign({},m,{kind:'log',key:'log:'+m.id,src:'Match Log',detail:''}));});
   B().forEach(b=>{
     const R=b.rounds.length;
     b.rounds.forEach((rd,ri)=>rd.forEach((m,mi)=>{
-      if(m.p1&&m.p2&&m.winner)out.push({id:b.id+'-'+ri+'-'+mi,kind:'bracket',ts:m.ts||b.ts||0,date:m.date||b.date,game:b.game,p1:m.p1,p2:m.p2,s1:m.s1,s2:m.s2,winner:m.winner,
+      if(m.p1&&m.p2&&m.winner)out.push({id:b.id+'-'+ri+'-'+mi,key:`br:${b.id}:${ri}:${mi}`,final:ri===R-1,kind:'bracket',ts:m.ts||b.ts||0,date:m.date||b.date,game:b.game,p1:m.p1,p2:m.p2,s1:m.s1,s2:m.s2,winner:m.winner,
         detail:m.bo>1?gamesFor(m,m.p1):'',bo:m.bo,src:b.name+' · '+roundName(ri,R)});
     }));
   });
@@ -1014,35 +1126,12 @@ function setTab(t){
 /* ---------- RENDER: setup ---------- */
 const playerUsed=id=>Object.values(D.matches).some(m=>m.p1===id||m.p2===id)||B().some(b=>b.players.includes(id))||C().some(m=>m.from===id||m.to===id);
 const gameUsed=id=>Object.values(D.matches).some(m=>m.game===id)||B().some(b=>b.game===id);
-function validDb(v){return /^https:\/\/[a-z0-9.-]+\.(firebaseio\.com|firebasedatabase\.app)\/?$/i.test(v)||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(v);}
-const RULES=`{
-  "rules": {
-    "${DB_NODE}": { ".read": true, ".write": true }
-  }
-}`;
 function renderSync(){
-  const el=$('#syncCard');
-  if(document.activeElement&&el.contains(document.activeElement))return;
-  const guide=`<details ${FIREBASE_DB_URL?'':'open'}><summary>How to set up the online league (free, about 5 minutes)</summary><ol>
-      <li>Go to <b>console.firebase.google.com</b> → <b>Create a project</b> (any name; Analytics can be off).</li>
-      <li>Left menu: <b>Build → Realtime Database</b> → <b>Create Database</b> → pick a location → <b>Start in test mode</b>.</li>
-      <li>Open the <b>Rules</b> tab, paste the rules below, click <b>Publish</b>.</li>
-      <li>Copy the database URL from the <b>Data</b> tab (like <code>https://xxxx-default-rtdb.firebaseio.com</code>) and paste it below.</li>
-      <li>Click <b>Download index.html</b>, upload that file to your GitHub repo (replace the old one), and send the GitHub Pages link to the tropa. That's it: everyone sees the same league, no codes.</li>
-    </ol><pre>${esc(RULES)}</pre><div class="small muted">Anyone with the link can open the league, so only share it with the tropa.</div></details>`;
-  if(FIREBASE_DB_URL){
-    el.innerHTML=`<h3>🌐 Online League</h3><p class="small" style="margin:0">✅ This page is connected to your online league. Everyone who opens <b>${esc(pageLink())}</b> sees the same brackets, standings and trash talk, live.</p>
-      <div class="share-row"><button class="btn" id="copyBtn">🔗 Copy Link</button></div>${guide}`;
-    return;
-  }
-  el.innerHTML=`<h3>🌐 Online League (shared with the tropa)</h3>
-    <p class="small muted" style="margin-top:0">${isOnline()?`✅ This device is connected. To connect everyone automatically, download the file below and upload it to GitHub.`:`Right now everything is saved only on this device. Connect a free Firebase database so the whole tropa shares one league.`}</p>
-    <label class="fl">Firebase Realtime Database URL<input id="dbIn" value="${esc(U.dbLocal)}" placeholder="https://your-project-default-rtdb.firebaseio.com"></label>
-    <div class="row">
-      <button class="btn" id="bakeBtn">⬇️ Download index.html (with this URL built in)</button>
-      <button class="btn ghost" id="connBtn">${isOnline()?'Reconnect':'Connect this device'}</button>
-      ${isOnline()?'<button class="btn danger" id="discBtn">Disconnect</button>':''}
-    </div>${location.protocol==='file:'?'<div class="warnbox">You opened this file from your computer. After downloading, upload it to GitHub Pages so your friends can open the link.</div>':''}${guide}`;
+  $('#syncCard').innerHTML=`<h3>🌐 The Tropa League (online)</h3>
+    <p class="small" style="margin:0">Everyone who opens <b>${esc(pageLink())}</b> and logs in joins this same league, live. No codes, no setup.</p>
+    <div class="share-row"><button class="btn" id="copyBtn">🔗 Copy Link</button></div>
+    <p class="small muted">Status: ${Sync.status==='live'?'🟢 connected':Sync.status==='err'?'🔴 offline (your changes are sent when you reconnect)':'🟡 connecting'} · League ID <code>${esc(LEAGUE_ID)}</code></p>
+    <p class="small muted" style="margin-bottom:0">Data is kept on a free public real-time server. Anyone with the link can see the league, so keep it in the group chat, and hit Export below once in a while for a backup.</p>`;
 }
 function renderSetup(){
   $('#pList').innerHTML=P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.pin?' 🔒':''}</button>${p.pin?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}<button class="chip-x" data-del-p="${p.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>';
@@ -1121,6 +1210,7 @@ function drawConnectors(){
       const box=document.querySelector(`#m-${r}-${i} .plates`);
       const tgt=$(`#pl-${r+1}-${Math.floor(i/2)}-${i%2===0?1:2}`);
       if(!box||!tgt)return;
+      const right=r<R-1&&i>=n(r)/2&&!(R-1===r+1&&false);
       const a=pos(box),t=pos(tgt);
       const isRight=i>=n(r)/2;
       const x1=isRight?a.x:a.x+a.w,y1=a.y+a.h/2;
@@ -1221,7 +1311,7 @@ function renderLog(){
     res.map(m=>{
       const has=num(m.s1)||num(m.s2);
       const sc=has?`<b>${esc(m.s1||0)} – ${esc(m.s2||0)}</b>${m.detail?`<div class="small muted">${esc(m.detail)}</div>`:''}`:'–';
-      return `<tr><td>${esc(m.date)}</td><td>${esc(gName(m.game))}</td><td>${side(m,m.p1)} <span class="muted small">vs</span> ${side(m,m.p2)}</td><td class="num">${sc}</td><td>${m.winner==='draw'?'🤝 Draw':'🏅 '+pTag(m.winner)}</td><td><span class="tag ${m.kind==='bracket'?'br':''}">${esc(m.src)}${m.bo>1?' · Bo'+m.bo:''}</span></td><td class="no-print">${m.kind==='log'&&me()?`<button class="x" data-del-m="${m.id}" title="Delete">🗑️</button>`:''}</td></tr>`;
+      return `<tr class="clickrow" data-open="${m.key}" title="Read the newspaper"><td>📰 ${esc(m.date)}</td><td>${esc(gName(m.game))}</td><td>${side(m,m.p1)} <span class="muted small">vs</span> ${side(m,m.p2)}</td><td class="num">${sc}</td><td>${m.winner==='draw'?'🤝 Draw':'🏅 '+pTag(m.winner)}</td><td><span class="tag ${m.kind==='bracket'?'br':''}">${esc(m.src)}${m.bo>1?' · Bo'+m.bo:''}</span></td><td class="no-print">${m.kind==='log'&&me()?`<button class="x" data-del-m="${m.id}" title="Delete">🗑️</button>`:''}</td></tr>`;
     }).join('')+`</tbody></table>`;
 }
 
@@ -1262,12 +1352,70 @@ function renderTalk(){
       :'<div class="small muted">Aim a message at someone with “@” to start a rivalry.</div>');
 }
 
-/* ---------- NEWSPAPER: facts + real trash talk only ---------- */
+/* ---------- LEAGUE HOME ---------- */
+function matchRow(m){
+  const has=num(m.s1)||num(m.s2);
+  const nm=pid=>`<span class="${m.winner==='draw'?'':m.winner===pid?'res-w':'res-l'}">${pTag(pid)}</span>`;
+  return `<div class="mrow" data-open="${m.key}" title="Read the newspaper"><span class="np">📰</span><div class="mm"><div class="mt">${nm(m.p1)} <span class="muted small">vs</span> ${nm(m.p2)}</div><div class="ms">${esc(gName(m.game))} · ${esc(m.src)} · ${esc(m.date||'')}</div></div><div class="sc">${has?`${esc(m.s1||0)}–${esc(m.s2||0)}`:(m.winner==='draw'?'Draw':'W')}</div></div>`;
+}
+function renderHome(){
+  const t=D.meta.title||'PS4 Tropa League',b=B()[B().length-1],id=me();
+  let line='No bracket yet. Create one in the Bracket tab.';
+  if(b){
+    if(b.champion)line=`${ico()} <b>${esc(pName(b.champion))}</b> won <b>${esc(b.name)}</b> (${esc(gName(b.game))}).`;
+    else{const R=b.rounds.length;let cur=R-1;for(let r=0;r<R;r++){if(b.rounds[r].some(m=>m.p1&&m.p2&&!m.winner)){cur=r;break;}}line=`🎮 <b>${esc(b.name)}</b> is live: ${roundName(cur,R)} in progress.`;}
+  }
+  const hero=$('#homeHero');
+  hero.style.backgroundImage=`linear-gradient(90deg,rgba(18,6,31,.97) 0%,rgba(18,6,31,.85) 45%,rgba(18,6,31,.2) 80%),url("${IMG.banner}")`;
+  hero.innerHTML=`<div class="in"><h2>${esc(t)}</h2><div class="wel">${id?`Welcome back, <b>${esc(pName(id))}</b>. `:''}${line}</div>
+    <div class="row"><button class="btn" data-goto="bracket">${ico()} View Bracket</button><button class="btn ghost" data-goto="standings">📊 Standings</button>${id?'':'<button class="btn ghost" data-login>👤 Log In</button>'}</div></div>`;
+  const res=allResults('all').reverse().slice(0,8);
+  $('#homeMatches').innerHTML=res.length?res.map(matchRow).join(''):'<div class="empty small">No matches yet.</div>';
+  const talk=C().slice(-6);
+  $('#homeTalk').innerHTML=talk.length?talk.map(m=>`<div class="tline">${avatar(m.from)}<div class="tx"><span class="who">${esc(pName(m.from)||'Unknown')}</span>${m.to&&m.to!=='all'?` <span class="to">→ @${esc(pName(m.to))}</span>`:''} <span class="muted small">${ago(m.ts)}</span><br>${esc(m.text)}</div></div>`).join(''):'<div class="empty small">No trash talk yet.</div>';
+  const rows=computeStandings('all').rows.filter(r=>r.gp>0).slice(0,5);
+  $('#homeTable').innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Player</th><th class="num">W</th><th class="num">L</th><th class="num">${ico()}</th><th class="num">Pts</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?'lead':''}"><td class="rk">${['🥇','🥈','🥉'][i]||i+1}</td><td>${pTag(r.id)}</td><td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${r.titles||'–'}</td><td class="pts">${r.pts}</td></tr>`).join('')}</tbody></table>`:'<div class="empty small">No matches yet.</div>';
+  const now=Date.now();
+  $('#homePlayers').innerHTML=P().length?P().map(p=>{const pr=D.presence[p.id];const on=pr&&now-pr.ts<3*60000;return `<div class="prow"><span class="${on?'dot-on':'dot-off'}"></span>${pTag(p.id)}${p.id===id?' <span class="tag">you</span>':''}<span class="muted">${on?'online':pr?'seen '+ago(pr.ts):(p.pin?'':'no account yet')}</span></div>`;}).join(''):'<div class="empty small">No players yet.</div>';
+}
+
+/* ---------- NEWSPAPER: facts + what players actually wrote ---------- */
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function hashStr(s){let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h);}
-function fmtDate(d){const [y,m,dd]=String(d).split('-').map(Number);if(!y)return d;const dt=new Date(y,m-1,dd);return `${DAYS[dt.getDay()]}, ${MONTHS[m-1]} ${dd}, ${y}`;}
+function fmtDate(d){const [y,m,dd]=String(d).split('-').map(Number);if(!y)return d||'';const dt=new Date(y,m-1,dd);return `${DAYS[dt.getDay()]}, ${MONTHS[m-1]} ${dd}, ${y}`;}
 const VERBS=['beat','knocked out','took down','eliminated'];
+let editingSay=null,modalKey=null;
+function getByKey(key){
+  const p=String(key||'').split(':');
+  if(p[0]==='log'){const m=D.matches[p[1]];return m?{kind:'log',m,id:p[1]}:null;}
+  if(p[0]==='br'){const b=D.brackets[p[1]];if(!b)return null;const r=+p[2],i=+p[3];const m=b.rounds[r]&&b.rounds[r][i];return m?{kind:'br',b,r,i,m,final:r===b.rounds.length-1}:null;}
+  return null;
+}
+function saveSay(key,text){
+  if(!requireLogin())return;
+  const x=getByKey(key);if(!x)return;
+  if(x.m.winner!==me()){toast('Only the winner can write this.');return;}
+  text=String(text||'').trim().slice(0,280);
+  if(!text){toast('Write something first.');return;}
+  x.m.say={text,ts:Date.now()};editingSay=null;
+  if(x.kind==='log')Sync.put('/matches/'+x.id,x.m);else Sync.put('/brackets/'+x.b.id,x.b);
+  renderAll();refreshModal(true);toast('Posted to The Tropa Times! 📰');
+}
+// the winner's own words + what was said in the trash talk chat afterwards (no dates)
+function afterBlock(key,m,label,reactions,role){
+  const w=m.winner&&m.winner!=='draw'?m.winner:null;
+  if(!w&&!reactions.length)return '';
+  const mine=!!(w&&me()===w),say=m.say&&m.say.text?m.say:null;
+  let h=`<div class="after-final"><div class="af-head">${label}</div>`;
+  if(say&&editingSay!==key)h+=`<blockquote class="af-say">“${esc(say.text)}”<cite>— ${esc(pName(w))}, ${esc(role(w))}</cite></blockquote>${mine?`<div class="af-tools no-print"><button class="linkbtn" data-edit-say="${key}">Edit my statement</button></div>`:''}`;
+  else if(mine)h+=`<div class="af-edit no-print"><textarea maxlength="280" placeholder="You won! Say whatever you want. It goes right here in the newspaper.">${say?esc(say.text):''}</textarea><div class="row"><button class="btn sm" data-save-say="${key}">Post to the newspaper</button></div></div>`;
+  else if(w)h+=`<p class="af-wait">Waiting for ${esc(pName(w))} to write something…</p>`;
+  if(reactions.length)h+=`<div class="af-sub">From the Trash Talk chat</div>`+reactions.map(r=>`<p class="af-r"><b>${esc(pName(r.from)||'Unknown')} (${esc(role(r.from))}):</b> “${esc(r.text)}”${r.to&&r.to!=='all'?` <i>→ @${esc(pName(r.to))}</i>`:''}</p>`).join('');
+  return h+'</div>';
+}
+const pickFrom=(pool,seed)=>pool[seed%pool.length];
+
 function storyOf(b){
   const R=b.rounds.length,champ=b.champion,fin=b.rounds[R-1][0];
   const finalist=fin.p1===champ?fin.p2:fin.p1;
@@ -1289,140 +1437,208 @@ function storyOf(b){
   const semis=R>=2?b.rounds[R-2].map(m=>m.winner===m.p1?m.p2:m.p1).filter(Boolean):[];
   const quarters=R>=3?b.rounds[R-3].map(m=>m.p1&&m.p2?(m.winner===m.p1?m.p2:m.p1):null).filter(Boolean):[];
   const all=computeStandings('all');
-  const rank=all.rows.findIndex(r=>r.id===champ)+1,st=all.rows[rank-1];
+  const rank=all.rows.findIndex(r=>r.id===champ)+1,st=all.rows[rank-1]||{w:0,d:0,l:0,pts:0,gp:0,pct:0,form:[],titles:1};
   const gs=computeStandings(b.game).rows.find(r=>r.id===champ);
   let streak=0;for(let i=st.form.length-1;i>=0&&st.form[i]==='W';i--)streak++;
   const leader=all.rows[0];
   const worst=[...all.rows].filter(r=>r.gp>0&&r.id!==champ).sort((a,c)=>c.l-a.l)[0];
   const gc={};all.res.forEach(m=>gc[m.game]=(gc[m.game]||0)+1);
   const topGame=Object.entries(gc).sort((a,c)=>c[1]-a[1])[0];
-  // trash talk windows: before = from a week before the bracket until the final; after = until the next bracket (max 3 days)
   const finalTs=fin.ts||Date.now(),startTs=(b.ts||0)-7*864e5;
   const nextTs=B().map(x=>x.ts||0).filter(t=>t>(b.ts||0)).sort((a,c)=>a-c)[0];
   const postEnd=Math.min(nextTs||Infinity,finalTs+3*864e5);
   const pre=C().filter(m=>m.ts>=startTs&&m.ts<=finalTs&&b.players.includes(m.from));
   const post=C().filter(m=>m.ts>finalTs&&m.ts<=postEnd);
   const lastOf=(list,f)=>list.filter(f).pop();
-  const finTalkChamp=lastOf(pre,m=>m.from===finalist&&m.to===champ);
-  const champTalkFin=lastOf(pre,m=>m.from===champ&&m.to===finalist);
-  const champAny=lastOf(pre,m=>m.from===champ);
-  const role=id=>id===champ?'Champion':id===finalist?'Runner-up':semis.includes(id)?'Semifinalist':elim[id]?`Out in ${roundName(elim[id].r,R)}`:b.players.includes(id)?'Player':'Spectator';
-  const receipts=pre.filter(m=>m.to&&m.to!=='all'&&b.players.includes(m.to)).map(m=>{
-    const to=esc(pName(m.to));let verdict,good;
-    if(m.from===champ){good=true;verdict=elim[m.to]&&elim[m.to].by===champ?`Backed it up: beat ${to}`:'Backed it up: won it all';}
-    else if(elim[m.from]&&elim[m.from].by===m.to){good=false;verdict=`Ate those words: knocked out by ${to}`;}
-    else if(elim[m.to]&&elim[m.to].by===m.from){good=true;verdict=`Backed it up: beat ${to}`;}
-    else{good=false;verdict=elim[m.from]?`Went out in the ${roundName(elim[m.from].r,R)}`:'No result between them';}
-    return Object.assign({},m,{verdict,good});
-  }).slice(-5);
-  const rv=rivalries()[0];
+  const role=id=>id===champ?'champion':id===finalist?'runner-up':semis.includes(id)?'semifinalist':elim[id]?`out in the ${roundName(elim[id].r,R).toLowerCase()}`:b.players.includes(id)?'player':'spectator';
   return {R,champ,finalist,series,fin,score,myF:+myF||0,opF:+opF||0,path,bpf,bpa,scored,semis,quarters,rank,st,gs,streak,leader,worst,topGame,
-    finTalkChamp,champTalkFin,champAny,post:post.slice(0,10),role,receipts,rv,date:fin.date||b.date,seed:hashStr(b.id),issue:B().indexOf(b)+1};
+    finTalkChamp:lastOf(pre,m=>m.from===finalist&&m.to===champ),champTalkFin:lastOf(pre,m=>m.from===champ&&m.to===finalist),champAny:lastOf(pre,m=>m.from===champ),
+    post:post.slice(0,6),role,rv:rivalries()[0],date:fin.date||b.date,seed:hashStr(b.id),issue:B().indexOf(b)+1};
 }
-function renderNews(){
-  const wrap=$('#newsWrap'),b=curBracket();
-  if(!b||!b.champion){wrap.innerHTML='';return;}
-  const s=storyOf(b),pick=(arr,k)=>arr[(s.seed+k*131)%arr.length];
-  const name=esc(pName(s.champ)),fin=esc(pName(s.finalist)),game=esc(gName(b.game));
-  const N=name.toUpperCase(),F=fin.toUpperCase(),Gm=game.toUpperCase();
-  const titles=s.st.titles,gTitles=s.gs?s.gs.titles:1,fbo=s.fin.bo;
-  const closeSeries=s.series&&fbo>1&&s.opF===need(fbo)-1;
-  const sweep=s.series&&s.opF===0;
+function champHeadline(b,s,noCheck){
+  const N=esc(pName(s.champ)).toUpperCase(),F=esc(pName(s.finalist)).toUpperCase(),Gm=esc(gName(b.game)).toUpperCase();
+  const t=s.st.titles,fbo=s.fin.bo,gp=(s.fin.games||[]).length;
   const diff=s.score&&!s.series?s.myF-s.opF:null;
-  let kicker='BREAKING NEWS',head;
-  if(titles>=3){kicker='DYNASTY ALERT';head=`${N} WINS TITLE NO. ${titles}`;}
-  else if(s.finTalkChamp){kicker='EAT YOUR WORDS';head=`${N} SILENCES ${F} AFTER THE TRASH TALK`;}
-  else if(s.champTalkFin){kicker='BACKED IT UP';head=`${N} TALKED THE TALK, THEN BEAT ${F}`;}
-  else if(titles===2){kicker='TWO-TIME CHAMP';head=`ANOTHER ONE! ${N} GRABS A SECOND TROPHY`;}
-  else if(closeSeries){kicker='INSTANT CLASSIC';head=fbo===7?`${N} WINS IT IN GAME 7!`:`${N} SURVIVES A THRILLER VS ${F}`;}
-  else if(diff===1){kicker='DOWN TO THE WIRE';head=`${N} EDGES ${F} IN A ONE-POINT FINAL`;}
-  else if(sweep&&fbo>1){kicker='CLEAN SWEEP';head=`${N} SWEEPS ${F} ${need(fbo)}-0!`;}
-  else if(diff!==null&&diff>=Math.max(3,s.myF*0.25)){kicker='NO MERCY';head=`${N} ROUTS ${F} IN THE FINAL`;}
-  else if(s.rank>=3&&s.st.gp>0){kicker='DARK HORSE';head=`UPSET! ${N} IS YOUR ${Gm} CHAMPION`;}
-  else head=pick([`${N} RULES ${Gm}!`,`ALL HAIL ${N}!`,`PLATINUM FOR ${N}!`],1);
+  const H={
+    dynasty:{k:['DYNASTY ALERT','HISTORY MADE','UNSTOPPABLE'],h:[`${N} WINS TITLE NO. ${t}`,`DYNASTY! ${N} COLLECTS TROPHY NO. ${t}`,`${N} DOES IT AGAIN. AND AGAIN.`,`NOBODY CAN STOP ${N}: ${t} TITLES`]},
+    eat:{k:['EAT YOUR WORDS','TRASH TALK BACKFIRES','SILENCED'],h:[`${N} SILENCES ${F} AFTER THE TRASH TALK`,`${F} TALKED. ${N} WON.`,`${N} MAKES ${F} EAT THOSE WORDS`,`ALL BARK, NO BITE: ${N} BEATS ${F}`]},
+    backed:{k:['BACKED IT UP','PROMISE KEPT','CALLED IT'],h:[`${N} TALKED THE TALK, THEN BEAT ${F}`,`${N} CALLED IT, THEN DID IT`,`PROMISE KEPT: ${N} BEATS ${F}`,`${N} BACKS UP THE TRASH TALK`]},
+    two:{k:['TWO-TIME CHAMP','BACK FOR MORE','DOUBLE UP'],h:[`ANOTHER ONE! ${N} GRABS A SECOND TROPHY`,`${N} IS NOW A TWO-TIME CHAMPION`,`DOUBLE TROUBLE: ${N} WINS AGAIN`]},
+    thriller:{k:['INSTANT CLASSIC','THRILLER','EDGE OF YOUR SEAT'],h:[`${N} WINS IT IN GAME ${gp}!`,`${N} SURVIVES A THRILLER VS ${F}`,`INSTANT CLASSIC: ${N} OUTLASTS ${F}`,`${N} EDGES ${F} IN A SERIES FOR THE AGES`]},
+    onept:{k:['DOWN TO THE WIRE','PHOTO FINISH','BY A HAIR'],h:[`${N} EDGES ${F} BY ONE`,`BY A HAIR: ${N} TAKES THE CROWN`,`${N} WINS A NAIL-BITER OVER ${F}`]},
+    sweep:{k:['CLEAN SWEEP','PERFECT FINAL','BROOM BROOM'],h:[`${N} SWEEPS ${F} ${need(fbo)}-0!`,`${F} SWEPT AS ${N} TAKES THE TITLE`,`NOT EVEN CLOSE: ${N} SWEEPS THE FINAL`]},
+    rout:{k:['NO MERCY','BLOWOUT','ONE-SIDED'],h:[`${N} ROUTS ${F} IN THE FINAL`,`NO CONTEST: ${N} CRUISES TO THE TITLE`,`${N} DEMOLISHES ${F}`]},
+    dark:{k:['DARK HORSE','UPSET','SHOCKER'],h:[`UPSET! ${N} IS YOUR ${Gm} CHAMPION`,`DARK HORSE ${N} TAKES IT ALL`,`NOBODY SAW ${N} COMING`]},
+    base:{k:['BREAKING NEWS','CHAMPION CROWNED','EXTRA! EXTRA!','FINAL WORD'],h:[`${N} RULES ${Gm}!`,`ALL HAIL ${N}!`,`PLATINUM FOR ${N}!`,`${N} IS THE ${Gm} CHAMPION`,`${N} TAKES THE CROWN`,`${N} ON TOP OF THE TROPA`]}
+  };
+  let cat='base';
+  if(t>=3)cat='dynasty';
+  else if(s.finTalkChamp)cat='eat';
+  else if(s.champTalkFin)cat='backed';
+  else if(t===2)cat='two';
+  else if(s.series&&fbo>1&&s.opF===need(fbo)-1)cat='thriller';
+  else if(diff===1)cat='onept';
+  else if(s.series&&fbo>1&&s.opF===0)cat='sweep';
+  else if(diff!==null&&diff>=Math.max(3,s.myF*0.25))cat='rout';
+  else if(s.rank>=3&&s.st.gp>0)cat='dark';
+  const seed=s.seed+s.issue;
+  let hi=seed%H[cat].h.length;
+  if(!noCheck){ // never repeat the previous newspaper's headline
+    const prev=B().filter(x=>x.champion&&(x.ts||0)<(b.ts||0)).pop();
+    if(prev){const ph=champHeadline(prev,storyOf(prev),true).head;if(H[cat].h[hi]===ph)hi=(hi+1)%H[cat].h.length;}
+  }
+  return {kicker:pickFrom(H[cat].k,seed),head:H[cat].h[hi]};
+}
+function newsShell(o){
+  return `<article class="news" id="${o.id||''}">
+    <div class="mast-top"><span>Edition: ${o.edition}</span><span>${esc(D.meta.title)}</span></div>
+    <h1 class="mast">The Tropa Times</h1>
+    <div class="mast-sub"><span>Vol. ${new Date().getFullYear()}${o.issue?` · No. ${o.issue}`:''}</span><span>${fmtDate(o.date)}</span><span>${o.game}</span></div>
+    <div class="kicker">${o.kicker}</div>
+    <h2 class="headline">${o.head}</h2>
+    <p class="deck">${o.deck}</p>
+    <div class="news-grid"><div>${o.photo}${o.after}<div class="byline">Tropa Times Sports Desk · ${o.game}</div><div class="news-cols">${o.paras}</div></div><aside>${o.aside}</aside></div>
+    <div class="news-foot"><span>Page 1</span><span>Tropa Times Press</span><span>△ ○ ✕ □</span></div>
+  </article>`;
+}
+function champNewsHTML(b){
+  const s=storyOf(b);
+  const name=esc(pName(s.champ)),fin=esc(pName(s.finalist)),game=esc(gName(b.game));
+  const {kicker,head}=champHeadline(b,s);
+  const titles=s.st.titles,gTitles=s.gs?s.gs.titles:1,fbo=s.fin.bo;
   const scoreTxt=s.score?(s.series?`${s.score} in a best-of-${fbo} series`:s.score):'';
   const deck=`${name} beat ${fin} in the final${scoreTxt?`, ${scoreTxt},`:''} to win the ${esc(b.name)} Platinum Trophy. ${titles>1?`Title number ${titles}.`:`${name}'s first title.`}`;
-  const pathTxt=s.path.map(p=>p.bye
-    ?`a bye in the ${roundName(p.r,s.R)}`
-    :`${pick(VERBS,p.r+2)} ${esc(pName(p.opp))}${num(p.my)&&num(p.ot)?` ${esc(p.my)}-${esc(p.ot)}`:''}${p.games?` (${esc(p.games)})`:''} in the ${roundName(p.r,s.R)}`).join('; ');
+  const pk=(arr,k)=>arr[(s.seed+k*131)%arr.length];
+  const pathTxt=s.path.map(p=>p.bye?`a bye in the ${roundName(p.r,s.R)}`
+    :`${pk(VERBS,p.r+2)} ${esc(pName(p.opp))}${num(p.my)&&num(p.ot)?` ${esc(p.my)}-${esc(p.ot)}`:''}${p.games?` (${esc(p.games)})`:''} in the ${roundName(p.r,s.R)}`).join('; ');
   const st=s.st,pct=st.gp?Math.round(st.pct*100):0;
   const q=m=>`“${esc(m.text)}”`;
-  let talkPara='';
-  if(s.finTalkChamp)talkPara=`<p>Before the final, ${fin} posted this at ${name} in the trash talk chat: ${q(s.finTalkChamp)} ${name} won the final${s.score?` ${s.score}`:''}.</p>`;
-  else if(s.champTalkFin)talkPara=`<p>Before the final, ${name} posted this at ${fin} in the trash talk chat: ${q(s.champTalkFin)} ${name} then won the final${s.score?` ${s.score}`:''}.</p>`;
-  else if(s.champAny)talkPara=`<p>${name}'s last post in the trash talk chat before the final: ${q(s.champAny)}</p>`;
-  const pullMsg=s.post.find(m=>m.from===s.champ)||s.champAny;
-  const pullHTML=pullMsg?`<div class="pull">${q(pullMsg)}<cite>— ${name}, ${s.post.includes(pullMsg)?'after the final':'before the final'}</cite></div>`:'';
+  let talkPara='',used=null;
+  if(s.finTalkChamp){used=s.finTalkChamp;talkPara=`<p>Before the final, ${fin} posted this at ${name} in the trash talk chat: ${q(used)} ${name} won the final${s.score?` ${s.score}`:''}.</p>`;}
+  else if(s.champTalkFin){used=s.champTalkFin;talkPara=`<p>Before the final, ${name} posted this at ${fin} in the trash talk chat: ${q(used)} ${name} then won the final${s.score?` ${s.score}`:''}.</p>`;}
+  const pull=s.champAny&&s.champAny!==used?`<div class="pull">${q(s.champAny)}<cite>— ${name}, in the trash talk chat before the final</cite></div>`:'';
   const others=s.semis.filter(x=>x!==s.finalist).map(x=>esc(pName(x)));
   const paras=[
-    `<p class="lede">${fmtDate(s.date)}. ${name} is the champion of <i>${esc(b.name)}</i>, beating ${fin} in the ${game} final${s.score?` (${s.score})`:''}. ${b.players.length} players entered; ${name} was the last one standing.</p>`,
+    `<p class="lede">${name} is the champion of <i>${esc(b.name)}</i>, beating ${fin} in the ${game} final${s.score?` (${s.score})`:''}. ${b.players.length} players entered; ${name} was the last one standing.</p>`,
     `<p>The road to the trophy: ${pathTxt}.${s.scored?` Across the bracket, ${name} scored ${s.bpf} points to the opponents' ${s.bpa}.`:''}</p>`,
-    talkPara,pullHTML,
-    `<p>In the overall standings of ${esc(D.meta.title)}, ${name} is now <b>#${s.rank}</b> with ${st.w} wins, ${st.d} draws and ${st.l} losses (${pct}% win rate), ${st.pts} points.${s.streak>=3?` That's ${s.streak} wins in a row.`:''}${st.l===0?' Still undefeated.':''}</p>`,
+    talkPara,pull,
+    `<p>In the overall standings of ${esc(D.meta.title)}, ${name} is now <b>#${s.rank}</b> with ${st.w} wins, ${st.d} draws and ${st.l} losses (${pct}% win rate), ${st.pts} points.${s.streak>=3?` That's ${s.streak} wins in a row.`:''}${st.l===0&&st.gp?' Still undefeated.':''}</p>`,
     others.length?`<p>${others.join(' and ')} ${others.length>1?'were':'was'} eliminated in the Semifinals.</p>`:''
   ].join('');
   const briefs=[];
-  if(s.leader&&s.leader.gp)briefs.push(s.leader.id===s.champ
-    ?`<p class="brief"><b>Number 1.</b> ${name} also leads the overall standings with ${s.leader.pts} pts.</p>`
-    :`<p class="brief"><b>Top of the table.</b> ${esc(pName(s.leader.id))} is #1 overall with ${s.leader.pts} pts.</p>`);
+  if(s.leader&&s.leader.gp)briefs.push(s.leader.id===s.champ?`<p class="brief"><b>Number 1.</b> ${name} also leads the overall standings with ${s.leader.pts} pts.</p>`:`<p class="brief"><b>Top of the table.</b> ${esc(pName(s.leader.id))} is #1 overall with ${s.leader.pts} pts.</p>`);
   if(s.rv)briefs.push(`<p class="brief"><b>Rivalry watch.</b> ${esc(pName(s.rv.a))} vs ${esc(pName(s.rv.b))}: ${s.rv.talk} trash talk${s.rv.talk===1?'':'s'}${s.rv.games?`, H2H ${s.rv.aw}-${s.rv.bw}`:''}.</p>`);
   if(s.worst&&s.worst.l>=2)briefs.push(`<p class="brief"><b>Most losses.</b> ${esc(pName(s.worst.id))} has ${s.worst.l} losses so far.</p>`);
   if(s.topGame)briefs.push(`<p class="brief"><b>Most played.</b> ${esc(gName(s.topGame[0]))}, ${s.topGame[1]} matches.</p>`);
   const places=[['🥇 Champion',name],['🥈 Runner-up',fin]];
   s.semis.filter(x=>x!==s.finalist).forEach(x=>places.push(['🥉 Top 4',esc(pName(x))]));
   s.quarters.forEach(x=>places.push(['Top 8',esc(pName(x))]));
-  const cite=m=>`<cite>— ${esc(pName(m.from)||'Unknown')} (${esc(s.role(m.from))})${m.to&&m.to!=='all'?` → @${esc(pName(m.to))}`:''} · ${fmtTime(m.ts)}</cite>`;
-  const reactions=s.post.length?s.post.map(m=>`<blockquote class="aq">${q(m)}${cite(m)}</blockquote>`).join('')
-    :`<p class="empty-note">No reactions yet. Anything posted in Trash Talk after the final shows up here.</p>`;
-  const receipts=s.receipts.length?s.receipts.map(r=>`<blockquote class="aq" style="font-size:15px">${q(r)}${cite(r)}<span class="verdict ${r.good?'ok':'bad'}">${r.good?'✔':'✘'} ${r.verdict}</span></blockquote>`).join('')
-    :`<p class="empty-note">Nobody aimed any trash talk at an opponent before this final.</p>`;
-  wrap.innerHTML=`
-  <div class="news-actions no-print"><button class="btn" id="printNews">🖨️ Print the Newspaper</button></div>
-  <article class="news" id="newspaper">
-    <div class="mast-top"><span>Edition: ${esc(b.name)}</span><span>${esc(D.meta.title)}</span></div>
-    <h1 class="mast">The Tropa Times</h1>
-    <div class="mast-sub"><span>Vol. ${new Date().getFullYear()} · No. ${s.issue}</span><span>${fmtDate(s.date)}</span><span>${game}</span></div>
-    <div class="kicker">${kicker}</div>
-    <h2 class="headline">${head}</h2>
-    <p class="deck">${deck}</p>
-    <div class="news-grid">
-      <div>
-        <figure class="news-photo">
-          <div class="np-img"><img src="${IMG.trophy}" alt="Platinum Trophy"><div class="np-plate">Champion · ${name}</div></div>
-          <figcaption>The ${esc(b.name)} Platinum Trophy, won by ${name}.</figcaption>
-        </figure>
-        <div class="byline">Tropa Times Sports Desk · ${game}</div>
-        <div class="news-cols">${paras}</div>
-      </div>
-      <aside>
-        <div class="side-box"><h4>Champion Stats</h4><table>
-          <tr><td>Overall rank</td><td>#${s.rank}</td></tr>
-          <tr><td>Record (W-D-L)</td><td>${st.w}-${st.d}-${st.l}</td></tr>
-          <tr><td>Win rate</td><td>${pct}%</td></tr>
-          <tr><td>Points</td><td>${st.pts}</td></tr>
-          <tr><td>Titles (all games)</td><td>${titles}</td></tr>
-          <tr><td>Titles in ${game}</td><td>${gTitles}</td></tr>
-          <tr><td>Win streak</td><td>${s.streak}</td></tr>
-          ${s.scored?`<tr><td>Point diff in bracket</td><td>${s.bpf-s.bpa>0?'+':''}${s.bpf-s.bpa}</td></tr>`:''}
-        </table></div>
-        <div class="side-box"><h4>Final Placings</h4><table>${places.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td></tr>`).join('')}</table></div>
-        ${briefs.length?`<div class="side-box"><h4>In Other News</h4>${briefs.join('')}</div>`:''}
-      </aside>
-    </div>
-    <section class="after">
-      <div class="after-head"><span>After the Final</span><small>Straight from the Trash Talk chat, word for word</small></div>
-      <div class="after-grid">
-        <div><h5>Reactions</h5>${reactions}</div>
-        <div><h5>Receipts: what they said before the final</h5>${receipts}</div>
-      </div>
-    </section>
-    <div class="news-foot"><span>Page 1</span><span>Tropa Times Press</span><span>△ ○ ✕ □</span></div>
-  </article>`;
+  const key=`br:${b.id}:${s.R-1}:0`;
+  return newsShell({id:'newspaper',edition:esc(b.name),issue:s.issue,date:s.date,game,kicker,head,deck,paras,
+    photo:`<figure class="news-photo"><div class="np-img"><img src="${IMG.trophy}" alt="Platinum Trophy"><div class="np-plate">Champion · ${name}</div></div><figcaption>The ${esc(b.name)} Platinum Trophy, won by ${name}.</figcaption></figure>`,
+    after:afterBlock(key,s.fin,'After the Final',s.post,s.role),
+    aside:`<div class="side-box"><h4>Champion Stats</h4><table>
+        <tr><td>Overall rank</td><td>#${s.rank}</td></tr><tr><td>Record (W-D-L)</td><td>${st.w}-${st.d}-${st.l}</td></tr>
+        <tr><td>Win rate</td><td>${pct}%</td></tr><tr><td>Points</td><td>${st.pts}</td></tr>
+        <tr><td>Titles (all games)</td><td>${titles}</td></tr><tr><td>Titles in ${game}</td><td>${gTitles}</td></tr>
+        <tr><td>Win streak</td><td>${s.streak}</td></tr>${s.scored?`<tr><td>Point diff in bracket</td><td>${s.bpf-s.bpa>0?'+':''}${s.bpf-s.bpa}</td></tr>`:''}
+      </table></div>
+      <div class="side-box"><h4>Final Placings</h4><table>${places.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td></tr>`).join('')}</table></div>
+      ${briefs.length?`<div class="side-box"><h4>In Other News</h4>${briefs.join('')}</div>`:''}`});
 }
-
+function matchNewsHTML(r){
+  const x=getByKey(r.key);if(!x)return '';
+  const m=x.m,draw=r.winner==='draw';
+  const W=draw?r.p1:r.winner,L=draw?r.p2:(r.winner===r.p1?r.p2:r.p1);
+  const sw=W===r.p1?r.s1:r.s2,sl=W===r.p1?r.s2:r.s1,hasScore=num(sw)&&num(sl);
+  const bo=x.kind==='br'?m.bo:1,detail=bo>1?gamesFor(m,W):'';
+  const w=esc(pName(W)),l=esc(pName(L)),game=esc(gName(r.game));
+  const WU=w.toUpperCase(),LU=l.toUpperCase(),GU=game.toUpperCase();
+  const all=allResults('all');
+  const pair=z=>(z.p1===W&&z.p2===L)||(z.p1===L&&z.p2===W);
+  const h2h=all.filter(pair),hw=h2h.filter(z=>z.winner===W).length,hl=h2h.filter(z=>z.winner===L).length;
+  const prior=h2h.filter(z=>(z.ts||0)<(r.ts||0)),lastPrior=prior[prior.length-1];
+  const wr=all.filter(z=>(z.p1===W||z.p2===W)&&(z.ts||0)<=(r.ts||0));
+  let streak=0;for(let i=wr.length-1;i>=0&&wr[i].winner===W;i--)streak++;
+  const ts=r.ts||Date.now();
+  const pre=C().filter(c=>c.ts<=ts&&c.ts>=ts-7*864e5&&((c.from===W&&c.to===L)||(c.from===L&&c.to===W)));
+  const post=C().filter(c=>c.ts>ts&&c.ts<=ts+864e5&&(c.from===W||c.from===L)).slice(0,6);
+  const lastOf=(list,f)=>list.filter(f).pop();
+  const lTalk=lastOf(pre,c=>c.from===L),wTalk=lastOf(pre,c=>c.from===W);
+  const diff=hasScore?parseFloat(sw)-parseFloat(sl):null;
+  const close=bo>1?(+sl===need(bo)-1):diff===1;
+  const rout=bo>1?(bo>=3&&+sl===0):(diff!==null&&diff>=Math.max(3,parseFloat(sw)*0.25));
+  const roundK=x.kind==='br'?roundName(x.r,x.b.rounds.length).toUpperCase():'MATCH REPORT';
+  const H={
+    draw:{k:['DEADLOCK','ALL SQUARE'],h:[`${WU} AND ${LU} SETTLE FOR A DRAW`,`NO WINNER: ${WU} AND ${LU} END LEVEL`,`DEADLOCK IN ${GU}`]},
+    eat:{k:['EAT YOUR WORDS','TRASH TALK BACKFIRES'],h:[`${WU} SHUTS UP ${LU}`,`${LU} TALKED. ${WU} WON.`,`${WU} MAKES ${LU} EAT THOSE WORDS`]},
+    backed:{k:['BACKED IT UP','CALLED IT'],h:[`${WU} TALKED IT, THEN WALKED IT`,`${WU} BACKS UP THE TRASH TALK VS ${LU}`,`AS PROMISED: ${WU} BEATS ${LU}`]},
+    revenge:{k:['REVENGE','PAYBACK'],h:[`REVENGE! ${WU} GETS BACK AT ${LU}`,`${WU} SETTLES THE SCORE WITH ${LU}`,`PAYBACK: ${WU} TURNS THE TABLES ON ${LU}`]},
+    streak:{k:['ON FIRE','HOT STREAK'],h:[`${WU} MAKES IT ${streak} STRAIGHT`,`${WU} STAYS HOT: ${streak} IN A ROW`,`CAN ANYONE STOP ${WU}? ${streak} STRAIGHT WINS`]},
+    close:{k:['DOWN TO THE WIRE','THRILLER'],h:[`${WU} EDGES ${LU}`,`${WU} SURVIVES A ${LU} SCARE`,`DOWN TO THE WIRE: ${WU} BEATS ${LU}`]},
+    rout:{k:['ONE-SIDED','BLOWOUT'],h:[`${WU} CRUISES PAST ${LU}`,`${WU} ROLLS OVER ${LU}`,`ONE-WAY TRAFFIC: ${WU} DOMINATES ${LU}`]},
+    base:{k:[roundK,'RESULT','MATCH REPORT'],h:[`${WU} BEATS ${LU} IN ${GU}`,`${WU} TAKES DOWN ${LU}`,`${WU} GETS THE W OVER ${LU}`,`${WU} OUTPLAYS ${LU}`]}
+  };
+  let cat='base';
+  if(draw)cat='draw';else if(lTalk)cat='eat';else if(wTalk)cat='backed';else if(lastPrior&&lastPrior.winner===L)cat='revenge';
+  else if(streak>=3)cat='streak';else if(close)cat='close';else if(rout)cat='rout';
+  const seed=hashStr(r.key);
+  const head=pickFrom(H[cat].h,seed),kicker=cat==='base'?roundK:pickFrom(H[cat].k,seed);
+  const scoreStr=hasScore?`${esc(sw)}-${esc(sl)}`:'';
+  const deck=draw?`${w} and ${l} drew${scoreStr?` ${scoreStr}`:''} in ${game}.`
+    :`${w} beat ${l}${scoreStr?` ${scoreStr}`:''}${bo>1?` in a best-of-${bo} series`:''} in ${game}${x.kind==='br'?`, ${roundName(x.r,x.b.rounds.length)} of ${esc(x.b.name)}`:''}.`;
+  const all2=computeStandings('all').rows;
+  const sr=id=>{const i=all2.findIndex(z=>z.id===id);return {rank:i+1,row:all2[i]||{w:0,d:0,l:0,pts:0,gp:0,pct:0,titles:0}};};
+  const A=sr(W),Bq=sr(L);
+  const q=c=>`“${esc(c.text)}”`;
+  let talk='';
+  if(lTalk)talk=`<p>Before the match, ${l} posted this at ${w} in the trash talk chat: ${q(lTalk)} ${w} won.</p>`;
+  else if(wTalk)talk=`<p>Before the match, ${w} posted this at ${l} in the trash talk chat: ${q(wTalk)} Then went out and won.</p>`;
+  const paras=[
+    `<p class="lede">${draw?`${w} and ${l} couldn't be separated in ${game}${scoreStr?`, finishing ${scoreStr}`:''}.`:`${w} got the win over ${l} in ${game}${scoreStr?`, ${scoreStr}`:''}.`}${x.kind==='br'?` It was the ${roundName(x.r,x.b.rounds.length)} of ${esc(x.b.name)}.`:''}</p>`,
+    detail?`<p>Game by game: ${esc(detail)}.</p>`:'',
+    talk,
+    `<p>Head-to-head, ${w} is now ${hw}-${hl} against ${l}.${streak>=2&&!draw?` ${w} has won ${streak} in a row.`:''}</p>`,
+    `<p>Overall, ${w} sits at #${A.rank} (${A.row.pts} pts) and ${l} at #${Bq.rank} (${Bq.row.pts} pts) in the ${esc(D.meta.title)} standings.</p>`
+  ].join('');
+  const role=id=>id===W&&!draw?'winner':id===L&&!draw?'loser':'player';
+  const pct=o=>o.row.gp?Math.round(o.row.pct*100)+'%':'–';
+  return newsShell({edition:esc(r.src),date:r.date,game,kicker,head,deck,paras,
+    photo:`<figure class="news-photo"><div class="np-img wide"><img src="${IMG.banner}" alt=""><div class="np-plate">${draw?`${w} – ${l}`:`${w} def. ${l}`}</div></div><figcaption>${draw?`${w} and ${l}`:`${w} vs ${l}`}, ${game}.</figcaption></figure>`,
+    after:afterBlock(r.key,m,x.kind==='br'&&x.final?'After the Final':'After the Match',post,role),
+    aside:`<div class="side-box"><h4>Tale of the Tape</h4><table class="tape">
+      <tr><td></td><td style="text-align:right"><b>${w}</b></td><td style="text-align:right"><b>${l}</b></td></tr>
+      <tr><td>Rank</td><td>#${A.rank}</td><td>#${Bq.rank}</td></tr>
+      <tr><td>Record</td><td>${A.row.w}-${A.row.d}-${A.row.l}</td><td>${Bq.row.w}-${Bq.row.d}-${Bq.row.l}</td></tr>
+      <tr><td>Win rate</td><td>${pct(A)}</td><td>${pct(Bq)}</td></tr>
+      <tr><td>Points</td><td>${A.row.pts}</td><td>${Bq.row.pts}</td></tr>
+      <tr><td>Titles</td><td>${A.row.titles}</td><td>${Bq.row.titles}</td></tr>
+      <tr><td>Head-to-head</td><td>${hw}</td><td>${hl}</td></tr></table></div>`});
+}
+function renderNews(){
+  const wrap=$('#newsWrap'),b=curBracket();
+  if(!b||!b.champion){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<div class="news-actions no-print"><button class="btn" id="printNews">🖨️ Print the Newspaper</button></div>`+champNewsHTML(b);
+}
+function openMatchNews(key){
+  modalKey=key;editingSay=null;$('#newsModal').hidden=false;refreshModal(true);$('#newsModal').scrollTop=0;
+}
+function refreshModal(force){
+  if(!modalKey||$('#newsModal').hidden)return;
+  if(!force&&typingNow())return;
+  const x=getByKey(modalKey);
+  if(!x){$('#newsModal').hidden=true;modalKey=null;return;}
+  let html='';
+  if(x.kind==='br'&&x.final&&x.b.champion)html=champNewsHTML(x.b).replace('id="newspaper"','');
+  else{const r=allResults('all').find(z=>z.key===modalKey);html=r?matchNewsHTML(r):'<article class="news"><p>This match has no result yet.</p></article>';}
+  $('#nmBody').innerHTML=html;
+}
 /* ---------- CHAMPION CELEBRATION ---------- */
 function showChampion(b){
   if(!b||!b.champion)return;
+  const fin=b.rounds[b.rounds.length-1][0];
+  $('#celSay').hidden=!(me()&&me()===b.champion&&!(fin.say&&fin.say.text));
+  $('#celSay').dataset.key=`br:${b.id}:${b.rounds.length-1}:0`;
   $('#celName').textContent=pName(b.champion);
   $('#celSub').textContent=`${b.name} · ${gName(b.game)}`;
   const cols=['var(--tri)','var(--cir)','var(--crs)','var(--sq)','var(--gold)'],sh=['△','○','✕','□','★'];
@@ -1432,7 +1648,7 @@ function showChampion(b){
 
 function renderAll(){
   if(U.me&&!D.players[U.me]&&loaded){U.me='';saveU();}
-  renderHeader();renderSetup();renderBracketCreate();renderBracketView();renderNews();renderHall();renderStandings();renderTalk();renderLog();renderAuth();
+  renderHeader();renderHome();renderSetup();renderBracketCreate();renderBracketView();renderNews();renderHall();renderStandings();renderTalk();renderLog();renderAuth();refreshModal();
 }
 
 /* ================= EVENTS ================= */
@@ -1443,34 +1659,15 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-news]')){const n=$('#newspaper');if(n)n.scrollIntoView({behavior:'smooth'});}
   if(e.target.closest('#printNews')){document.body.classList.remove('print-all');document.body.classList.add('print-news');window.print();}
   if(e.target.closest('#copyBtn'))copyLink();
-  if(e.target.closest('#connBtn')){
-    const v=($('#dbIn').value||'').trim();
-    if(!validDb(v)){alert('Paste your Firebase Realtime Database URL (e.g. https://xxxx-default-rtdb.firebaseio.com).');return;}
-    U.dbLocal=v.replace(/\/+$/,'');saveU();loaded=!!loadJSON(cacheKey());D=loadInitial();renderAll();Sync.connect();
-  }
-  if(e.target.closest('#discBtn')){
-    if(!confirm('Disconnect this device from the online league?'))return;
-    Sync.disconnect();U.dbLocal='';saveU();loaded=true;D=loadInitial();Sync.setStatus('local');renderAll();
-  }
-  if(e.target.closest('#bakeBtn'))bake();
+  const op=e.target.closest('[data-open]');if(op)openMatchNews(op.dataset.open);
+  const sv=e.target.closest('[data-save-say]');if(sv)saveSay(sv.dataset.saveSay,sv.closest('.af-edit').querySelector('textarea').value);
+  const ed=e.target.closest('[data-edit-say]');if(ed){editingSay=ed.dataset.editSay;renderNews();refreshModal(true);}
 });
 $('#shareBtn').addEventListener('click',copyLink);
-async function bake(){
-  const v=($('#dbIn').value||'').trim().replace(/\/+$/,'');
-  if(!validDb(v)){alert('Paste your Firebase Realtime Database URL first (e.g. https://xxxx-default-rtdb.firebaseio.com).');return;}
-  const re=/const FIREBASE_DB_URL='[^']*';/;
-  try{
-    const r=await fetch(pageLink(),{cache:'no-store'});
-    let html=await r.text();
-    if(!re.test(html))throw new Error('marker');
-    html=html.replace(re,"const FIREBASE_DB_URL='"+v+"';");
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='index.html';
-    document.body.appendChild(a);a.click();a.remove();
-    toast('Downloaded! Upload this index.html to GitHub.');
-  }catch(err){
-    alert("Your browser blocked the automatic download (common when opening the file from your computer).\n\nDo it by hand instead: open index.html on GitHub, click the ✏️ pencil, find this line near the top of the script:\n\nconst FIREBASE_DB_URL='';\n\nand put your URL between the quotes:\n\nconst FIREBASE_DB_URL='"+v+"';\n\nThen commit.");
-  }
-}
+$('#nmClose').addEventListener('click',()=>{$('#newsModal').hidden=true;modalKey=null;});
+$('#newsModal').addEventListener('click',e=>{if(e.target.id==='newsModal'){$('#newsModal').hidden=true;modalKey=null;}});
+$('#nmPrint').addEventListener('click',()=>{document.body.classList.remove('print-all','print-news');document.body.classList.add('print-modal');window.print();});
+$('#celSay').addEventListener('click',()=>{$('#celebrate').hidden=true;openMatchNews($('#celSay').dataset.key);setTimeout(()=>{const t=document.querySelector('#nmBody .af-edit textarea');if(t)t.focus();},80);});
 
 // login / accounts
 $$('[data-auth]').forEach(b=>b.addEventListener('click',()=>{authMode=b.dataset.auth;renderAuth();}));
@@ -1508,7 +1705,7 @@ $('#authGuest').addEventListener('click',()=>{U.guest=true;saveU();closeAuth();r
 $('#celClose').addEventListener('click',()=>{$('#celebrate').hidden=true;});
 $('#celNews').addEventListener('click',()=>{$('#celebrate').hidden=true;setTab('bracket');const n=$('#newspaper');if(n)setTimeout(()=>n.scrollIntoView({behavior:'smooth'}),50);});
 $('#celebrate').addEventListener('click',e=>{if(e.target.id==='celebrate')$('#celebrate').hidden=true;});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#celebrate').hidden=true;});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#celebrate').hidden=true;$('#newsModal').hidden=true;modalKey=null;}});
 
 // players (setup)
 function addPlayers(){
@@ -1565,14 +1762,14 @@ $('#impIn').addEventListener('change',e=>{
     let o=JSON.parse(rd.result);
     if(Array.isArray(o.players))o=fromV1(o);
     if(!o||typeof o.players!=='object')throw 0;
-    if(!confirm(isOnline()?'This replaces the whole online league for everyone. Continue?':'This replaces your current data. Continue?'))return;
+    if(!confirm('This replaces the whole tropa league for everyone. Continue?'))return;
     excluded.clear();Sync.replaceAll(o);renderAll();toast('Imported!');
   }catch(err){alert('That is not a valid backup file.');}};
   rd.readAsText(f);
 });
 $('#resetBtn').addEventListener('click',()=>{
   if(!requireLogin())return;
-  if(!confirm(isOnline()?'This erases EVERYTHING in the online league for everyone, including accounts. Are you sure?':'This erases everything. Are you sure?'))return;
+  if(!confirm('This erases EVERYTHING in the tropa league for everyone, including accounts. Are you sure?'))return;
   if(!confirm('Last chance! Export a backup first if you want one. Reset now?'))return;
   excluded.clear();Sync.replaceAll(defaultData());U.me='';saveU();renderAll();openAuth();
 });
@@ -1693,14 +1890,15 @@ function fitBracketForPrint(){
   const z=Math.min(1,1000/(lastGrid.w||1),560/(lastGrid.h||1));g.style.zoom=z<1?z.toFixed(3):'';
 }
 window.addEventListener('beforeprint',()=>{$('#printDate').textContent=new Date().toLocaleString();fitBracketForPrint();});
-window.addEventListener('afterprint',()=>{document.body.classList.remove('print-all','print-news');const g=$('#bracketGrid');if(g)g.style.zoom='';});
+window.addEventListener('afterprint',()=>{document.body.classList.remove('print-all','print-news','print-modal');const g=$('#bracketGrid');if(g)g.style.zoom='';});
 $('#printBtn').addEventListener('click',()=>{document.body.classList.remove('print-all','print-news');window.print();});
 $('#printAllBtn').addEventListener('click',()=>{document.body.classList.remove('print-news');document.body.classList.add('print-all');window.print();});
 
 /* ================= INIT ================= */
 renderAll();
-setTab(U.tab||'bracket');
-if(isOnline())Sync.connect();else Sync.setStatus('local');
+setTab(U.tab||'home');
+Sync.setStatus('warn','Connecting…');
+loadMqttLib(0);
 if(!me()&&!U.guest)openAuth();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawConnectors);
 window.addEventListener('resize',drawConnectors);
