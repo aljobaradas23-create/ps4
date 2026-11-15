@@ -548,13 +548,10 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
       <img class="logo-img" data-img="trophy" alt="Trophy">
       <div>
         <h1 id="hTitle">PS4 Tropa League</h1>
-        <div class="sub">Bracket · Standings · Trash Talk</div>
+        <div class="sub">Bracket · Standings · Match Log</div>
       </div>
     </div>
     <div class="actions">
-      <span class="status" id="status"><span class="dot"></span><span id="statusTx">Local only</span></span>
-      <span id="userArea"></span>
-      <button class="btn ghost" id="shareBtn" title="Copy the link to this page">🔗 Share</button>
       <button class="btn ghost" id="printBtn" title="Print the current tab">🖨️ Print Tab</button>
       <button class="btn" id="printAllBtn" title="Bracket + Standings + Match Log">🖨️ Print All</button>
     </div>
@@ -564,9 +561,7 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
     <button class="tab" data-tab="home">🏠 League</button>
     <button class="tab" data-tab="bracket"><img class="ico" data-img="sm" alt=""> Bracket</button>
     <button class="tab" data-tab="standings">📊 Standings</button>
-    <button class="tab" data-tab="talk">🔥 Trash Talk <span id="talkBadge"></span></button>
     <button class="tab" data-tab="log">🎮 Match Log</button>
-    <button class="tab" data-tab="setup">⚙️ Setup</button>
   </nav>
 
   <!-- ================= LEAGUE HOME ================= -->
@@ -574,11 +569,42 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
     <div class="home-hero" id="homeHero"></div>
     <div class="home-grid">
       <div class="card"><h3>🎮 Recent Matches <span class="small muted">tap a match to read its newspaper</span></h3><div id="homeMatches"></div></div>
-      <div class="card"><h3>🔥 Recent Trash Talk</h3><div id="homeTalk"></div><div style="margin-top:10px"><button class="btn ghost sm" data-goto="talk">Open Trash Talk →</button></div></div>
-    </div>
-    <div class="home-grid">
       <div class="card"><h3>📊 Top of the Table</h3><div id="homeTable"></div></div>
-      <div class="card"><h3>👥 The Tropa</h3><div id="homePlayers"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>👥 Players</h3>
+        <div class="row">
+          <input id="pIn" class="grow" placeholder="Add players (many at once: Aljo, Mark, Jun)">
+          <button class="btn" id="pAdd">Add</button>
+        </div>
+        <div id="pList" class="chips"></div>
+        <p class="hint">Tap a name to rename · ✕ removes a player (their past matches stay in the history).</p>
+      </div>
+      <div class="card">
+        <h3>🕹️ Games</h3>
+        <div class="row">
+          <input id="gIn" class="grow" placeholder="Game name (e.g. Tekken 7)">
+          <button class="btn" id="gAdd">Add</button>
+        </div>
+        <div id="gList" class="chips"></div>
+        <p class="hint">Click a name to rename it.</p>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>🏷️ League Name</h3>
+        <input id="titleIn" style="width:100%" maxlength="40">
+      </div>
+      <div class="card">
+        <h3>💾 Data / Backup</h3>
+        <p class="small muted" style="margin-top:0">Everything is saved on this device automatically. Export a backup file to keep it safe or to move it to another phone, then Import it there.</p>
+        <div class="row">
+          <button class="btn ghost" id="expBtn">⬇️ Export</button>
+          <label class="btn ghost">⬆️ Import<input type="file" id="impIn" accept=".json,application/json" hidden></label>
+          <button class="btn danger" id="resetBtn">♻️ Reset Everything</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -641,27 +667,6 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
     </div>
   </section>
 
-  <!-- ================= TRASH TALK ================= -->
-  <section id="sec-talk" class="section">
-    <div class="sec-head"><h2>🔥 Trash Talk</h2><span class="small muted">Whatever you post here can end up in The Tropa Times.</span></div>
-    <div class="talk-grid">
-      <div class="card">
-        <div id="chatList" class="chat-list"></div>
-        <div class="chat-form" id="chatForm">
-          <div class="posting" id="tkAs"></div>
-          <select id="tkTo" title="Aim at"></select>
-          <input id="tkMsg" maxlength="280" placeholder="Say something you might regret…">
-          <button class="btn ghost" id="tkRand" title="Random trash talk line">🎲</button>
-          <button class="btn" id="tkSend">Send</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>⚔️ Rivalry Board</h3>
-        <div id="rivals"></div>
-      </div>
-    </div>
-  </section>
-
   <!-- ================= MATCH LOG ================= -->
   <section id="sec-log" class="section printable">
     <div class="sec-head"><h2>🎮 Match Log</h2></div>
@@ -689,82 +694,9 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
     </div>
   </section>
 
-  <!-- ================= SETUP ================= -->
-  <section id="sec-setup" class="section">
-    <div class="card" id="syncCard"></div>
-    <div class="grid2">
-      <div class="card">
-        <h3>👥 Players</h3>
-        <div class="row">
-          <input id="pIn" class="grow" placeholder="Add players without an account (e.g. Mark, Jun)">
-          <button class="btn" id="pAdd">Add</button>
-        </div>
-        <div id="pList" class="chips"></div>
-        <p class="hint">🔒 = has an account (PIN set). Players without a PIN can claim their name on the login screen. Tap a name to rename. Admin only: ✕ removes a player · 🔑 clears a forgotten PIN · 👑 hands the admin role to someone else.</p>
-      </div>
-      <div class="card">
-        <h3>🕹️ Games</h3>
-        <div class="row">
-          <input id="gIn" class="grow" placeholder="Game name (e.g. Tekken 7)">
-          <button class="btn" id="gAdd">Add</button>
-        </div>
-        <div id="gList" class="chips"></div>
-        <p class="hint">Click a name to rename it.</p>
-      </div>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <h3>🏷️ League Name</h3>
-        <input id="titleIn" style="width:100%" maxlength="40">
-      </div>
-      <div class="card">
-        <h3>💾 Data / Backup</h3>
-        <p class="small muted" style="margin-top:0">Everything auto-saves. Export a backup file anytime, or import one to restore it.</p>
-        <div class="row">
-          <button class="btn ghost" id="expBtn">⬇️ Export</button>
-          <label class="btn ghost">⬆️ Import<input type="file" id="impIn" accept=".json,application/json" hidden></label>
-          <button class="btn danger" id="resetBtn">♻️ Reset Everything</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <footer>△ ○ ✕ □ &nbsp;Made for the tropa. GG, well played.</footer>
 </div>
 <div class="toast" id="toast"></div>
-
-<!-- ================= LOGIN / ACCOUNTS ================= -->
-<div class="auth" id="auth" hidden>
-  <div class="auth-card">
-    <img class="at" data-img="trophy" alt="">
-    <h2 id="authTitle">PS4 Tropa League</h2>
-    <div class="small muted" id="authSub">Log in to join the league</div>
-    <div class="auth-tabs">
-      <button class="tab active" data-auth="login">Log In</button>
-      <button class="tab" data-auth="signup">Create Account</button>
-    </div>
-    <div id="authLogin">
-      <div class="small muted" id="authLoading"></div>
-      <div class="pgrid" id="authPlayers"></div>
-      <div class="auth-form" id="authPinBox" hidden>
-        <div class="small muted" id="authPinLbl">Enter your PIN</div>
-        <input class="pin" id="authPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••">
-        <input class="pin" id="authPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="confirm" hidden>
-        <button class="btn" id="authGo">Log In</button>
-      </div>
-    </div>
-    <div id="authSignup" hidden>
-      <div class="auth-form">
-        <input id="suName" maxlength="24" placeholder="Your name / gamer tag">
-        <input class="pin" id="suPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="PIN">
-        <input class="pin" id="suPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="confirm">
-        <button class="btn" id="suGo">Create Account</button>
-      </div>
-    </div>
-    <div class="auth-note">Your PIN is 4–6 digits. Use your name + PIN to log in on any phone.<br>
-      <button class="linkbtn" id="authGuest">Just watching? Continue as guest →</button></div>
-  </div>
-</div>
 
 <div class="nmodal" id="newsModal" hidden>
   <div class="nmodal-bar"><button class="btn" id="nmPrint">🖨️ Print</button><button class="btn ghost" id="nmClose">✕ Close</button></div>
@@ -780,7 +712,7 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
     <div class="cel-name" id="celName"></div>
     <div class="cel-sub" id="celSub"></div>
     <div class="row">
-      <button class="btn" id="celSay" hidden>✍️ Write your after-final statement</button>
+      <button class="btn" id="celSay" hidden>✍️ Write the champion's statement</button>
       <button class="btn" id="celNews">📰 Read the Newspaper</button>
       <button class="btn ghost" id="celClose">Close</button>
     </div>
@@ -790,22 +722,7 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
 <script>
 (function(){
 'use strict';
-/* ==========================================================
-   ONLINE LEAGUE: same Firebase project as the Sidequest Board.
-   Accounts (name + PIN) are Firebase logins, so they work on any
-   phone. League data lives under its own "tropa" node.
-   ========================================================== */
-const FIREBASE_CONFIG={
-  apiKey: "AIzaSyBk7hdUTQaSFhTSOji5neWonFayROFy3Bs",
-  authDomain: "sidequest-301f1.firebaseapp.com",
-  databaseURL: "https://sidequest-301f1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "sidequest-301f1",
-  storageBucket: "sidequest-301f1.firebasestorage.app",
-  messagingSenderId: "503094309997",
-  appId: "1:503094309997:web:5b5e1437bb0bbe02373b64"
-};
-const FB_VER='10.12.2';
-const DB_NODE='tropa';
+/* Everything is saved on this device (localStorage). Use Export / Import to back it up or move it. */
 const COLS=['meta','players','games','matches','brackets','chat','presence'];
 
 const DATA_KEY='ps4-tropa-league-v2', UI_KEY='ps4-tropa-ui-v4', OLD_KEY='ps4-tropa-league-v1';
@@ -863,7 +780,7 @@ function fromV1(o){
 
 let U=Object.assign({tab:'home',stGame:'all',lgFilter:'all',currentBracket:null,lastGame:null,me:'',guest:false,dbLocal:'',lastSeenChat:0},loadJSON(UI_KEY)||{});
 const saveU=()=>saveJSON(UI_KEY,U);
-const isOnline=()=>true;
+const isOnline=()=>false;
 
 const cacheKey=()=>isOnline()?DATA_KEY+':fb':DATA_KEY;
 function localData(){ // data from older single-device versions
@@ -890,8 +807,8 @@ const playerOpts=()=>P().map(p=>`<option value="${p.id}">${esc(p.name)}</option>
 function roundName(r,R){const left=R-r;return left===1?'Final':left===2?'Semifinal':left===3?'Quarterfinal':'Round '+(r+1);}
 const curBracket=()=>D.brackets[U.currentBracket]||B()[B().length-1]||null;
 const champMap=()=>{const o={};B().forEach(b=>o[b.id]=b.champion||null);return o;};
-const me=()=>D.players[U.me]&&!D.players[U.me].removed?U.me:'';
-const isAdmin=()=>!!me()&&D.meta.admin===me();
+const me=()=>'local';
+const isAdmin=()=>true;
 
 function setPath(root,path,val){
   const segs=String(path).split('/').filter(Boolean);
@@ -902,184 +819,19 @@ function setPath(root,path,val){
   if(val===null||val===undefined){if(Array.isArray(o))o[k]=undefined;else delete o[k];}else o[k]=val;
 }
 
-/* ---------- SYNC + ACCOUNTS: Firebase (same setup as the Sidequest Board) ----------
-   Uses the Firebase SDK with Firebase Auth. Name + PIN become a Firebase login, so the
-   same account works on every phone. Guests are signed in anonymously so they can watch.
-   This page runs as its own named Firebase app, so it never touches the Sidequest login. */
-const clean=v=>v===undefined?null:JSON.parse(JSON.stringify(v)); // Firebase refuses `undefined`
-function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);setTimeout(()=>no(new Error('timeout')),12000);});}
-const acctEmail=(pid,n)=>`${pid}.${n||0}@ps4tropa-league.app`.toLowerCase();
-const acctPw=pin=>'ps4!'+pin+'#tropa';
-const RULE_SNIPPET=`"${DB_NODE}": { ".read": "auth != null", ".write": "auth != null" }`;
-const Sync={
-  app:null,auth:null,db:null,uid:null,anon:true,got:false,status:'warn',listening:false,denied:false,
-  ref(p){return this.db.ref(DB_NODE+(p||''));},
-  write(method,p,val){
-    if(!this.db||!this.uid){toast('Still connecting to the league… your change is saved on this phone and will need to be redone.');return Promise.resolve();}
-    const r=this.ref(p);
-    return (method==='DELETE'?r.remove():r.set(clean(val))).catch(e=>{
-      if(e&&/permission/i.test(e.code||e.message||''))this.permissionProblem();
-      else toast('⚠️ Couldn’t save online. Check your internet.');
-    });
-  },
-  put(path,val){setPath(D,path,val);D=normalize(D);cache();this.write('PUT',path,val);},
-  del(path){setPath(D,path,null);D=normalize(D);cache();this.write('DELETE',path);},
-  replaceAll(obj){D=normalize(obj);cache();return this.write('PUT','',D);},
-  apply(data){
-    const first=!this.got;this.got=true;this.denied=false;
-    const before=loaded&&!first?champMap():null;
-    D=normalize(data||{});
-    syncMe();
-    if(first){loaded=true;cache();onLoaded(!data);return;}
-    scheduleRemote(before);
-  },
-  connect(){
-    this.setStatus('warn','Connecting…');
-    setTimeout(()=>{if(!loaded){loaded=true;renderAll();}},7000); // never keep the login screen waiting forever
-    const base='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
-    loadScript(base+'firebase-app-compat.js')
-      .then(()=>Promise.all([loadScript(base+'firebase-auth-compat.js'),loadScript(base+'firebase-database-compat.js')]))
-      .then(()=>this.start())
-      .catch(()=>{this.setStatus('err','Offline');if(!loaded){loaded=true;renderAll();}});
-  },
-  start(){
-    try{
-      this.app=firebase.apps.find(a=>a.name==='ps4tropa')||firebase.initializeApp(FIREBASE_CONFIG,'ps4tropa');
-      this.auth=this.app.auth();this.db=this.app.database();
-    }catch(e){this.setStatus('err','Offline');return;}
-    this.db.ref('.info/connected').on('value',s=>{if(this.denied)return;s.val()?this.setStatus('live','Live'):this.setStatus('warn',this.got?'Reconnecting…':'Connecting…');});
-    this.auth.onAuthStateChanged(u=>{
-      if(!u){this.uid=null;this.anon=true;this.auth.signInAnonymously().catch(e=>this.authFail(e));return;}
-      this.uid=u.uid;this.anon=!!u.isAnonymous;
-      this.listen();syncMe();renderAll();
-    });
-  },
-  listen(){
-    if(this.listening)return;this.listening=true;
-    this.ref('').on('value',snap=>this.apply(snap.val()),()=>{this.listening=false;this.permissionProblem();});
-  },
-  permissionProblem(){
-    this.denied=true;this.setStatus('err','No permission');
-    if(!loaded){loaded=true;}
-    renderAll();
-    toast('⚠️ The Firebase rules don’t allow the league yet. See Setup.');
-  },
-  authFail(e){
-    const c=e&&e.code||'';
-    if(c==='auth/network-request-failed')this.setStatus('err','Offline');
-    else this.setStatus('err','Sign-in failed');
-  },
-  signOut(){if(this.auth)return this.auth.signOut().catch(()=>{});return Promise.resolve();},
-  // create a Firebase login for this player (keeps the anonymous session's id when possible, like the Sidequest Board)
-  async createLogin(email,pw){
-    const u=this.auth.currentUser;
-    if(u&&u.isAnonymous){
-      try{const res=await u.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email,pw));return res.user||u;}
-      catch(e){if(!/credential-already-in-use|email-already-in-use/.test(e.code||''))throw e;}
-    }
-    const res=await this.auth.createUserWithEmailAndPassword(email,pw);return res.user;
-  },
-  async signIn(email,pw){const res=await this.auth.signInWithEmailAndPassword(email,pw);return res.user;},
-  setUser(u){this.uid=u.uid;this.anon=false;},
-  setStatus(s,txt){this.status=s;renderStatus(txt);}
-};
-// which player is logged in on this device = the player whose Firebase login is active
-function syncMe(){
-  if(!Sync.uid||!Sync.got)return;
-  if(Sync.anon){if(U.me){U.me='';saveU();if(!U.guest)openAuth();}return;}
-  const p=Object.values(D.players).find(x=>x&&x.uid===Sync.uid);
-  if(!p)return;
-  if(p.removed){U.me='';saveU();Sync.signOut();toast('You were removed from the league by the admin.');openAuth();return;}
-  if(U.me!==p.id){U.me=p.id;U.guest=false;saveU();closeAuth();}
-}
-function onLoaded(empty){
-  if(empty){ // brand-new league
-    const local=localData();
-    const up=local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('The tropa league is empty. Upload the players, brackets and matches saved on this device?');
-    const d=up?local:defaultData();
-    Object.values(d.players).forEach(p=>{delete p.uid;delete p.uid;}); // old PIN accounts get claimed again with a Firebase login
-    Object.keys(D.players).forEach(id=>{if(!d.players[id])d.players[id]=D.players[id];});
-    Sync.replaceAll(d);
-  }else if(!G().length){
-    DEFAULT_GAMES.forEach((n,i)=>{const id='g_'+n.toLowerCase().replace(/[^a-z0-9]+/g,'');Sync.put('/games/'+id,{id,name:n,order:i});});
-  }
-  renderAll();heartbeat();
-}
-function renderStatus(txt){
-  $('#status').className='status '+({live:'live',warn:'warn',err:'err'}[Sync.status]||'');
-  $('#statusTx').textContent=txt||(Sync.status==='live'?'Live':Sync.status==='err'?'Offline':'Connecting…');
-}
-// don't re-render under someone's fingers (score boxes, unsent newspaper statement)
-let pendingRender=false,lastKey=0,remoteTimer=null,remoteBefore=null;
-document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#bracketView,.af-edit'))lastKey=Date.now();});
-const typingNow=()=>{
-  const a=document.activeElement;if(!a||!a.matches)return false;
-  if(a.matches('.af-edit textarea'))return a.value.trim().length>0||Date.now()-lastKey<2500;
-  return a.matches('#bracketView input')&&Date.now()-lastKey<2500;
-};
-function flushPending(){if(!pendingRender)return;if(typingNow()){setTimeout(flushPending,1500);return;}pendingRender=false;renderAll();}
-function scheduleRemote(before){
-  if(before&&!remoteBefore)remoteBefore=before;
-  clearTimeout(remoteTimer);
-  remoteTimer=setTimeout(()=>{const b=remoteBefore;remoteBefore=null;afterRemote(b);},120);
-}
-function afterRemote(before){
-  cache();
-  if(before)B().forEach(b=>{if(b.champion&&(b.id in before)&&before[b.id]!==b.champion)showChampion(b);});
-  if(typingNow()){if(!pendingRender)setTimeout(flushPending,1500);pendingRender=true;renderAuth();return;}
-  renderAll();
-}
-document.addEventListener('focusout',()=>{if(pendingRender)setTimeout(flushPending,0);});
-function heartbeat(){if(me()&&loaded&&Sync.got&&Sync.uid&&!Sync.anon)Sync.put('/presence/'+me(),{ts:Date.now()});}
-setInterval(heartbeat,60000);
-const pageLink=()=>location.href.split('#')[0].split('?')[0];
-function copyLink(){
-  const link=pageLink();
-  const done=()=>toast('🔗 Link copied! Send it to the tropa.');
-  if(navigator.clipboard)navigator.clipboard.writeText(link).then(done).catch(()=>prompt('Copy this link:',link));
-  else prompt('Copy this link:',link);
-}
-function renderSync(){
-  const el=$('#syncCard');
-  el.innerHTML=`<h3>🌐 The Tropa League is online</h3>
-    <p class="small" style="margin:0">Same setup as the Sidequest Board: everyone who opens <b>${esc(pageLink())}</b> and logs in with their name + PIN joins this league, on any phone, live.</p>
-    <div class="share-row"><button class="btn" id="copyBtn">🔗 Copy Link</button></div>
-    <p class="small muted">Status: ${Sync.status==='live'?'🟢 connected':Sync.denied?'🔴 blocked by the Firebase rules (see below)':Sync.status==='err'?'🔴 offline':'🟡 connecting'}</p>
-    ${Sync.denied?`<div class="warnbox">One-time fix: in the Firebase console of your Sidequest project, open <b>Realtime Database → Rules</b> and add this line inside <code>"rules": { … }</code>, next to the rules that are already there (don't delete the Sidequest ones), then click <b>Publish</b>:<pre>${esc(RULE_SNIPPET)}</pre></div>`:''}`;
-}
+/* ---------- STORAGE: this device only ---------- */
+const Sync={status:'local',got:true,
+  put(path,val){setPath(D,path,val);D=normalize(D);cache();},
+  del(path){setPath(D,path,null);D=normalize(D);cache();},
+  replaceAll(obj){D=normalize(obj);cache();},
+  connect(){}};
+const typingNow=()=>false;
+function copyLink(){}
+function renderSync(){}
 
-/* ---------- ACCOUNTS ---------- */
-let authSel=null,authMode='login';
-function openAuth(mode){authMode=mode||'login';authSel=null;$('#auth').hidden=false;renderAuth();}
-function closeAuth(){$('#auth').hidden=true;}
-function login(id){U.me=id;U.guest=false;saveU();closeAuth();setTab('home');renderAll();heartbeat();toast(`Welcome to the league, ${pName(id)}! 🎮`);}
-function renderAuth(){
-  if($('#auth').hidden)return;
-  $('#authTitle').textContent=D.meta.title||'PS4 Tropa League';
-  $('#authSub').innerHTML=Sync.denied?'<span style="color:#ffe3a3">⚠️ The league isn’t open yet: the admin needs to add one Firebase rule (see Setup).</span>':'Log in to join the league';
-  $$('[data-auth]').forEach(b=>b.classList.toggle('active',b.dataset.auth===authMode));
-  $('#authLogin').hidden=authMode!=='login';$('#authSignup').hidden=authMode!=='signup';
-  $('#authLoading').textContent=!loaded?(Sync.status==='err'?'Can’t reach the league. Check your internet.':'Connecting to the tropa league…'):(P().length?'Tap your name':'No players yet. Create the first account!');
-  $('#authPlayers').innerHTML=P().map(p=>`<button class="pcard ${authSel===p.id?'on':''}" data-pick-acc="${p.id}">${avatar(p.id)}${esc(p.name)}<small>${p.uid?'🔒 account':'tap to claim'}</small></button>`).join('');
-  const p=D.players[authSel];
-  $('#authPinBox').hidden=!p;
-  if(p){
-    const first=!p.uid;
-    $('#authPinLbl').textContent=first?`First time, ${p.name}? Set a 4–6 digit PIN`:`Enter your PIN, ${p.name}`;
-    $('#authPin2').hidden=!first;
-    $('#authGo').textContent=first?'Set PIN & Log In':'Log In';
-  }
-}
-function requireLogin(){
-  if(me())return true;
-  toast('Log in first to make changes.');openAuth();return false;
-}
-function renderUser(){
-  const id=me();
-  $('#userArea').innerHTML=id
-    ?`<span class="userchip">${avatar(id)}<b>${esc(pName(id))}</b><button class="linkbtn small" id="logoutBtn">Log out</button></span>`
-    :`<button class="btn ghost" id="loginBtn">👤 Log In</button>`;
-}
+/* ---------- no accounts: everyone using this device can edit ---------- */
+function openAuth(){}function closeAuth(){}function renderAuth(){}
+function requireLogin(){return true;}
 
 /* ---------- BRACKET LOGIC (best-of series) ---------- */
 const need=bo=>Math.ceil(bo/2);
@@ -1166,9 +918,6 @@ function renderHeader(){
   const t=D.meta.title||'PS4 Tropa League';
   $('#hTitle').textContent=t;$('#pTitle').textContent=t;document.title=t;
   if(document.activeElement!==$('#titleIn'))$('#titleIn').value=t;
-  const unread=C().filter(m=>m.ts>(U.lastSeenChat||0)&&m.from!==U.me).length;
-  $('#talkBadge').innerHTML=unread&&U.tab!=='talk'?`<span class="badge">${unread>99?'99+':unread}</span>`:'';
-  renderStatus();renderUser();
 }
 function setTab(t){
   U.tab=t;if(t==='talk')U.lastSeenChat=Date.now();saveU();
@@ -1183,10 +932,7 @@ function setTab(t){
 const playerUsed=id=>Object.values(D.matches).some(m=>m.p1===id||m.p2===id)||B().some(b=>b.players.includes(id))||C().some(m=>m.from===id||m.to===id);
 const gameUsed=id=>Object.values(D.matches).some(m=>m.game===id)||B().some(b=>b.game===id);
 function renderSetup(){
-  const adm=isAdmin(),admId=D.meta.admin&&D.players[D.meta.admin]&&!D.players[D.meta.admin].removed?D.meta.admin:'';
-  $('#pList').innerHTML=(P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.id===admId?' 👑':''}${p.uid?' 🔒':''}</button>${adm&&p.id!==me()?`<button class="chip-x" data-mk-admin="${p.id}" title="Make ${esc(p.name)} the admin">👑</button>`:''}${adm&&p.uid?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}${adm&&p.id!==me()?`<button class="chip-x" data-del-p="${p.id}" title="Remove player">✕</button>`:''}</span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>')
-    +(!admId&&me()?`<div style="width:100%;margin-top:8px"><button class="btn sm" id="claimAdmin">👑 Become the league admin</button></div>`:'')
-    +(admId?`<div class="small muted" style="width:100%;margin-top:6px">👑 Admin: <b>${esc(pName(admId))}</b>${adm?' (you)':''}</div>`:'');
+  $('#pList').innerHTML=P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}</button><button class="chip-x" data-del-p="${p.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No players yet. Add your tropa above ↑</span>';
   $('#gList').innerHTML=G().length?G().map(g=>`<span class="chip"><button class="chip-name" data-ren-g="${g.id}" title="Rename">🎮 ${esc(g.name)}</button><button class="chip-x" data-del-g="${g.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No games yet.</span>';
   renderSync();
 }
@@ -1381,7 +1127,7 @@ function rivalries(){
   return Object.values(map).sort((x,y)=>(y.talk*2+y.games)-(x.talk*2+x.games));
 }
 function scrollChat(force){const l=$('#chatList');if(!l)return;if(force||l.scrollHeight-l.scrollTop-l.clientHeight<120)l.scrollTop=l.scrollHeight;}
-function renderTalk(){
+function renderTalk(){return;
   const id=me();
   $('#tkAs').innerHTML=id?`${avatar(id)}<span>Posting as<br><b>${esc(pName(id))}</b></span>`:`<button class="btn ghost" data-login>👤 Log in to talk</button>`;
   ['#tkTo','#tkMsg','#tkRand','#tkSend'].forEach(s=>$(s).disabled=!id);
@@ -1419,16 +1165,12 @@ function renderHome(){
   }
   const hero=$('#homeHero');
   hero.style.backgroundImage=`linear-gradient(90deg,rgba(18,6,31,.97) 0%,rgba(18,6,31,.85) 45%,rgba(18,6,31,.2) 80%),url("${IMG.banner}")`;
-  hero.innerHTML=`<div class="in"><h2>${esc(t)}</h2><div class="wel">${id?`Welcome back, <b>${esc(pName(id))}</b>. `:''}${line}${isOnline()?'':'<br><span style="color:#ffe3a3">⚠️ Not online yet: set up Firebase in the Setup tab so the whole tropa logs into this league.</span>'}</div>
+  hero.innerHTML=`<div class="in"><h2>${esc(t)}</h2><div class="wel">${line}</div>
     <div class="row"><button class="btn" data-goto="bracket">${ico()} View Bracket</button><button class="btn ghost" data-goto="standings">📊 Standings</button>${id?'':'<button class="btn ghost" data-login>👤 Log In</button>'}</div></div>`;
   const res=allResults('all').reverse().slice(0,8);
   $('#homeMatches').innerHTML=res.length?res.map(matchRow).join(''):'<div class="empty small">No matches yet.</div>';
-  const talk=C().slice(-6);
-  $('#homeTalk').innerHTML=talk.length?talk.map(m=>`<div class="tline">${avatar(m.from)}<div class="tx"><span class="who">${esc(pName(m.from)||'Unknown')}</span>${m.to&&m.to!=='all'?` <span class="to">→ @${esc(pName(m.to))}</span>`:''} <span class="muted small">${ago(m.ts)}</span><br>${esc(m.text)}</div></div>`).join(''):'<div class="empty small">No trash talk yet.</div>';
   const rows=computeStandings('all').rows.filter(r=>r.gp>0).slice(0,5);
   $('#homeTable').innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Player</th><th class="num">W</th><th class="num">L</th><th class="num">${ico()}</th><th class="num">Pts</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?'lead':''}"><td class="rk">${['🥇','🥈','🥉'][i]||i+1}</td><td>${pTag(r.id)}</td><td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${r.titles||'–'}</td><td class="pts">${r.pts}</td></tr>`).join('')}</tbody></table>`:'<div class="empty small">No matches yet.</div>';
-  const now=Date.now();
-  $('#homePlayers').innerHTML=P().length?P().map(p=>{const pr=D.presence[p.id];const on=pr&&now-pr.ts<3*60000;return `<div class="prow"><span class="${on?'dot-on':'dot-off'}"></span>${pTag(p.id)}${p.id===id?' <span class="tag">you</span>':''}<span class="muted">${on?'online':pr?'seen '+ago(pr.ts):(p.uid?'':'no account yet')}</span></div>`;}).join(''):'<div class="empty small">No players yet.</div>';
 }
 
 /* ---------- NEWSPAPER: facts + what players actually wrote ---------- */
@@ -1447,7 +1189,6 @@ function getByKey(key){
 function saveSay(key,text){
   if(!requireLogin())return;
   const x=getByKey(key);if(!x)return;
-  if(x.m.winner!==me()){toast('Only the winner can write this.');return;}
   text=String(text||'').trim().slice(0,280);
   if(!text){toast('Write something first.');return;}
   x.m.say={text,ts:Date.now()};editingSay=null;
@@ -1458,10 +1199,10 @@ function saveSay(key,text){
 function afterBlock(key,m,label,reactions,role){
   const w=m.winner&&m.winner!=='draw'?m.winner:null;
   if(!w&&!reactions.length)return '';
-  const mine=!!(w&&me()===w),say=m.say&&m.say.text?m.say:null;
+  const mine=!!w,say=m.say&&m.say.text?m.say:null;
   let h=`<div class="after-final"><div class="af-head">${label}</div>`;
-  if(say&&editingSay!==key)h+=`<blockquote class="af-say">“${esc(say.text)}”<cite>— ${esc(pName(w))}, ${esc(role(w))}</cite></blockquote>${mine?`<div class="af-tools no-print"><button class="linkbtn" data-edit-say="${key}">Edit my statement</button></div>`:''}`;
-  else if(mine)h+=`<div class="af-edit no-print"><textarea maxlength="280" placeholder="You won! Say whatever you want. It goes right here in the newspaper.">${say?esc(say.text):''}</textarea><div class="row"><button class="btn sm" data-save-say="${key}">Post to the newspaper</button></div></div>`;
+  if(say&&editingSay!==key)h+=`<blockquote class="af-say">“${esc(say.text)}”<cite>— ${esc(pName(w))}, ${esc(role(w))}</cite></blockquote>${mine?`<div class="af-tools no-print"><button class="linkbtn" data-edit-say="${key}">Edit statement</button></div>`:''}`;
+  else if(mine)h+=`<div class="af-edit no-print"><textarea maxlength="280" placeholder="What does ${esc(pName(w))} want to say? Type it here and it goes right in the newspaper.">${say?esc(say.text):''}</textarea><div class="row"><button class="btn sm" data-save-say="${key}">Post to the newspaper</button></div></div>`;
   else if(w)h+=`<p class="af-wait">Waiting for ${esc(pName(w))} to write something…</p>`;
   if(reactions.length)h+=`<div class="af-sub">From the Trash Talk chat</div>`+reactions.map(r=>`<p class="af-r"><b>${esc(pName(r.from)||'Unknown')} (${esc(role(r.from))}):</b> “${esc(r.text)}”${r.to&&r.to!=='all'?` <i>→ @${esc(pName(r.to))}</i>`:''}</p>`).join('');
   return h+'</div>';
@@ -1689,7 +1430,7 @@ function refreshModal(force){
 function showChampion(b){
   if(!b||!b.champion)return;
   const fin=b.rounds[b.rounds.length-1][0];
-  $('#celSay').hidden=!(me()&&me()===b.champion&&!(fin.say&&fin.say.text));
+  $('#celSay').hidden=!!(fin.say&&fin.say.text);
   $('#celSay').dataset.key=`br:${b.id}:${b.rounds.length-1}:0`;
   $('#celName').textContent=pName(b.champion);
   $('#celSub').textContent=`${b.name} · ${gName(b.game)}`;
@@ -1715,65 +1456,10 @@ document.addEventListener('click',e=>{
   const sv=e.target.closest('[data-save-say]');if(sv)saveSay(sv.dataset.saveSay,sv.closest('.af-edit').querySelector('textarea').value);
   const ed=e.target.closest('[data-edit-say]');if(ed){editingSay=ed.dataset.editSay;renderNews();refreshModal(true);}
 });
-$('#shareBtn').addEventListener('click',copyLink);
 $('#nmClose').addEventListener('click',()=>{$('#newsModal').hidden=true;modalKey=null;});
 $('#newsModal').addEventListener('click',e=>{if(e.target.id==='newsModal'){$('#newsModal').hidden=true;modalKey=null;}});
 $('#nmPrint').addEventListener('click',()=>{document.body.classList.remove('print-all','print-news');document.body.classList.add('print-modal');window.print();});
 $('#celSay').addEventListener('click',()=>{$('#celebrate').hidden=true;openMatchNews($('#celSay').dataset.key);setTimeout(()=>{const t=document.querySelector('#nmBody .af-edit textarea');if(t)t.focus();},80);});
-
-// login / accounts
-$$('[data-auth]').forEach(b=>b.addEventListener('click',()=>{authMode=b.dataset.auth;renderAuth();}));
-$('#authPlayers').addEventListener('click',e=>{const c=e.target.closest('[data-pick-acc]');if(!c)return;authSel=c.dataset.pickAcc;$('#authPin').value='';$('#authPin2').value='';renderAuth();setTimeout(()=>$('#authPin').focus(),0);});
-async function doLogin(){
-  const p=D.players[authSel];if(!p)return;
-  const pin=$('#authPin').value.trim();
-  if(!/^\d{4,6}$/.test(pin)){toast('PIN must be 4–6 digits.');return;}
-  if(!Sync.auth){toast('Still connecting to the league… try again in a moment.');return;}
-  $('#authGo').disabled=true;
-  try{
-    if(p.uid){
-      const u=await Sync.signIn(acctEmail(p.id,p.acctN),acctPw(pin));
-      Sync.setUser(u);login(p.id);
-    }else{
-      if(pin!==$('#authPin2').value.trim()){toast('PINs don’t match.');return;}
-      const u=await Sync.createLogin(acctEmail(p.id,p.acctN),acctPw(pin));
-      Sync.setUser(u);Sync.put('/players/'+p.id+'/uid',u.uid);login(p.id);
-    }
-  }catch(e){
-    const c=e&&e.code||'';
-    if(/wrong-password|invalid-credential|invalid-login-credentials|user-not-found/.test(c)){toast('Wrong PIN. Try again.');$('#authPin').select();}
-    else if(/too-many-requests/.test(c))toast('Too many tries. Wait a minute and try again.');
-    else if(/network/.test(c))toast('No internet connection. Try again.');
-    else toast('Couldn’t log in ('+(c||'error')+').');
-  }finally{$('#authGo').disabled=false;}
-}
-$('#authGo').addEventListener('click',doLogin);
-['#authPin','#authPin2'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
-async function doSignup(){
-  const name=$('#suName').value.trim().slice(0,24),pin=$('#suPin').value.trim();
-  if(!name){toast('Enter your name.');return;}
-  if(!Sync.auth||!Sync.got){toast(Sync.status==='err'?'Can’t reach the league. Check your internet and try again.':'Still connecting to the league… try again in a moment.');return;}
-  const ex=P().find(p=>p.name.toLowerCase()===name.toLowerCase());
-  if(ex){toast(ex.uid?'That name is taken. Log in instead.':'That name already exists. Tap it on the Log In tab to claim it.');authMode='login';authSel=ex.uid?null:ex.id;renderAuth();return;}
-  if(!/^\d{4,6}$/.test(pin)){toast('PIN must be 4–6 digits.');return;}
-  if(pin!==$('#suPin2').value.trim()){toast('PINs don’t match.');return;}
-  const id=uid();
-  $('#suGo').disabled=true;
-  try{
-    const u=await Sync.createLogin(acctEmail(id,0),acctPw(pin));
-    Sync.setUser(u);
-    Sync.put('/players/'+id,{id,name,order:Date.now(),uid:u.uid,acctN:0});
-    if(!D.meta.admin||!D.players[D.meta.admin]||D.players[D.meta.admin].removed)Sync.put('/meta/admin',id); // the first account runs the league
-    $('#suName').value=$('#suPin').value=$('#suPin2').value='';
-    login(id);
-  }catch(e){
-    const c=e&&e.code||'';
-    toast(/network/.test(c)?'No internet connection. Try again.':'Couldn’t create the account ('+(c||'error')+').');
-  }finally{$('#suGo').disabled=false;}
-}
-$('#suGo').addEventListener('click',doSignup);
-['#suPin2'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')doSignup();}));
-$('#authGuest').addEventListener('click',()=>{U.guest=true;saveU();closeAuth();renderAll();});
 
 // celebration
 $('#celClose').addEventListener('click',()=>{$('#celebrate').hidden=true;});
@@ -1842,16 +1528,16 @@ $('#impIn').addEventListener('change',e=>{
     let o=JSON.parse(rd.result);
     if(Array.isArray(o.players))o=fromV1(o);
     if(!o||typeof o.players!=='object')throw 0;
-    if(!confirm('This replaces the whole tropa league for everyone. Continue?'))return;
+    if(!confirm('This replaces your current data. Continue?'))return;
     excluded.clear();Sync.replaceAll(o);renderAll();toast('Imported!');
   }catch(err){alert('That is not a valid backup file.');}};
   rd.readAsText(f);
 });
 $('#resetBtn').addEventListener('click',()=>{
   if(!requireLogin())return;
-  if(!confirm('This erases EVERYTHING in the tropa league for everyone, including accounts. Are you sure?'))return;
+  if(!confirm('This erases everything (players, brackets, matches). Are you sure?'))return;
   if(!confirm('Last chance! Export a backup first if you want one. Reset now?'))return;
-  excluded.clear();Sync.replaceAll(defaultData());U.me='';saveU();renderAll();openAuth();
+  excluded.clear();Sync.replaceAll(defaultData());renderAll();setTab('home');
 });
 
 // bracket create
@@ -1927,21 +1613,6 @@ $('#bracketView').addEventListener('change',e=>{
 // standings
 $('#stGame').addEventListener('change',e=>{U.stGame=e.target.value;saveU();renderStandings();});
 
-// trash talk
-$('#tkRand').addEventListener('click',()=>{$('#tkMsg').value=TRASH[Math.floor(Math.random()*TRASH.length)];$('#tkMsg').focus();});
-function sendTalk(){
-  if(!requireLogin())return;
-  const text=$('#tkMsg').value.trim(),to=$('#tkTo').value||'all';
-  if(!text)return;
-  const id=Date.now().toString(36)+uid().slice(0,4);
-  Sync.put('/chat/'+id,{id,ts:Date.now(),from:me(),to,text:text.slice(0,280)});
-  $('#tkMsg').value='';U.lastSeenChat=Date.now();saveU();renderAll();scrollChat(true);
-}
-$('#tkSend').addEventListener('click',sendTalk);
-$('#tkMsg').addEventListener('keydown',e=>{if(e.key==='Enter')sendTalk();});
-$('#chatList').addEventListener('click',e=>{const d=e.target.closest('[data-delc]');if(!d)return;const m=D.chat[d.dataset.delc];if(!m||m.from!==me())return;if(!confirm('Delete this message?'))return;Sync.del('/chat/'+m.id);renderAll();});
-setInterval(()=>{if(U.tab==='talk'&&!document.hidden){const l=$('#chatList');const keep=l.scrollTop;renderTalk();l.scrollTop=keep;}},60000);
-
 // match log
 ['#lgS1','#lgS2'].forEach(s=>$(s).addEventListener('input',updWinOpts));
 ['#lgP1','#lgP2'].forEach(s=>$(s).addEventListener('change',updWinOpts));
@@ -1976,9 +1647,8 @@ $('#printAllBtn').addEventListener('click',()=>{document.body.classList.remove('
 
 /* ================= INIT ================= */
 renderAll();
-setTab(U.tab||'home');
-Sync.connect();
-if(!me()&&!U.guest)openAuth();
+setTab(['home','bracket','standings','log'].includes(U.tab)?U.tab:'home');
+
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawConnectors);
 window.addEventListener('resize',drawConnectors);
 })();
