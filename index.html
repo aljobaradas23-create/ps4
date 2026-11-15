@@ -780,12 +780,15 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
 /* ==========================================================
    ONE SHARED LEAGUE, NO SETUP
    Everyone who opens this page joins the same league, synced
-   live through a free public real-time server (EMQX MQTT).
+   live through free public real-time servers (MQTT).
    Change LEAGUE_ID only if you want a brand-new, empty league.
    ========================================================== */
 const LEAGUE_ID='tropa-league-7f3k9q2xw8';
-const MQTT_URL='wss://broker.emqx.io:8084/mqtt';
-const MQTT_LIBS=['https://unpkg.com/mqtt@5/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js'];
+const BROKERS=[ // free public real-time servers; the league is mirrored on all of them
+  {url:'wss://broker.emqx.io:8084/mqtt'},
+  {url:'wss://broker.hivemq.com:8884/mqtt'},
+  {url:'wss://public.cloud.shiftr.io',user:'public',pass:'public'}
+];
 const BASE='ps4tropa/'+LEAGUE_ID;
 const COLS=['meta','players','games','matches','brackets','chat','presence'];
 
@@ -818,7 +821,7 @@ const fmtTime=ts=>new Date(ts).toLocaleString(undefined,{month:'short',day:'nume
 
 /* ---------- data model ---------- */
 const DEFAULT_GAMES=['EA Sports FC / FIFA','NBA 2K','Tekken 7','Mortal Kombat 11','Street Fighter V','Crash Team Racing','Call of Duty'];
-function defaultData(){const g={};DEFAULT_GAMES.forEach((n,i)=>{const id=uid();g[id]={id,name:n,order:i};});return {meta:{title:'PS4 Tropa League'},players:{},games:g,matches:{},brackets:{},chat:{},presence:{}};}
+function defaultData(){const g={};DEFAULT_GAMES.forEach((n,i)=>{const id='g_'+n.toLowerCase().replace(/[^a-z0-9]+/g,'');g[id]={id,name:n,order:i};});return {meta:{title:'PS4 Tropa League'},players:{},games:g,matches:{},brackets:{},chat:{},presence:{}};}
 const arr=x=>Array.isArray(x)?x.filter(v=>v!=null):(x&&typeof x==='object'?Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]).filter(v=>v!=null):[]);
 function normBracket(b){
   b.bo=+b.bo||1;b.boFinal=+b.boFinal||b.bo;b.players=arr(b.players);
@@ -881,77 +884,144 @@ function setPath(root,path,val){
   if(val===null||val===undefined){if(Array.isArray(o))o[k]=undefined;else delete o[k];}else o[k]=val;
 }
 
-/* ---------- SYNC: one shared league over MQTT (each record = one retained message) ---------- */
+/* ---------- TINY MQTT 3.1.1 CLIENT (over WebSocket, no library to download) ---------- */
+const enc=new TextEncoder(),dec=new TextDecoder();
+function mqStr(s){const b=enc.encode(s);return [b.length>>8,b.length&255,...b];}
+function mqLen(n){const o=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;}
+function mqPacket(type,body){const b=body instanceof Uint8Array?body:Uint8Array.from(body);const h=[type,...mqLen(b.length)];const out=new Uint8Array(h.length+b.length);out.set(h,0);out.set(b,h.length);return out;}
+class MiniMqtt{
+  constructor(cfg,h){this.cfg=cfg;this.h=h;this.ws=null;this.buf=new Uint8Array(0);this.ok=false;this.pid=1;this.wait=2000;this.stopped=false;this.open();}
+  open(){
+    let ws;try{ws=new WebSocket(this.cfg.url,['mqtt']);}catch(e){return this.retry();}
+    this.ws=ws;ws.binaryType='arraybuffer';
+    const t=setTimeout(()=>{try{ws.close();}catch(e){}},9000); // give up on a blocked port quickly
+    ws.onopen=()=>{
+      const c=this.cfg,flags=0x02|(c.user?0x80:0)|(c.pass?0x40:0);
+      ws.send(mqPacket(0x10,[...mqStr('MQTT'),4,flags,0,30,...mqStr('ps4tl_'+uid()+uid()),...(c.user?mqStr(c.user):[]),...(c.pass?mqStr(c.pass):[])]));
+    };
+    ws.onmessage=e=>{const d=new Uint8Array(e.data),n=new Uint8Array(this.buf.length+d.length);n.set(this.buf);n.set(d,this.buf.length);this.buf=n;this.parse();if(this.ok)clearTimeout(t);};
+    ws.onclose=()=>{clearTimeout(t);const was=this.ok;this.ok=false;clearInterval(this.ping);if(was)this.h.down(this);this.retry();};
+    ws.onerror=()=>{};
+  }
+  retry(){if(this.stopped)return;setTimeout(()=>this.open(),this.wait);this.wait=Math.min(this.wait*1.6,20000);}
+  parse(){
+    while(this.buf.length>=2){
+      let mul=1,len=0,i=1,byte;
+      do{if(i>=this.buf.length)return;byte=this.buf[i++];len+=(byte&127)*mul;mul*=128;}while(byte&128);
+      if(this.buf.length<i+len)return;
+      const type=this.buf[0],body=this.buf.slice(i,i+len);this.buf=this.buf.slice(i+len);
+      this.packet(type,body);
+    }
+  }
+  packet(type,b){
+    const k=type>>4;
+    if(k===2){ // CONNACK
+      if(b[1]!==0){try{this.ws.close();}catch(e){}return;}
+      this.ok=true;this.wait=2000;
+      this.ping=setInterval(()=>{try{this.ws.send(Uint8Array.from([0xC0,0]));}catch(e){}},20000);
+      const id=this.pid++;
+      this.ws.send(mqPacket(0x82,[id>>8,id&255,...mqStr(this.cfg.topic),0]));
+    }else if(k===9){this.h.subscribed(this);} // SUBACK
+    else if(k===3){ // PUBLISH
+      const qos=(type>>1)&3,tl=(b[0]<<8)|b[1],topic=dec.decode(b.slice(2,2+tl));let p=2+tl;
+      if(qos>0){const id=(b[p]<<8)|b[p+1];p+=2;if(qos===1)try{this.ws.send(Uint8Array.from([0x40,2,id>>8,id&255]));}catch(e){}}
+      this.h.message(this,topic,dec.decode(b.slice(p)));
+    }
+  }
+  publish(topic,payload){
+    if(!this.ok)return false;
+    try{this.ws.send(mqPacket(0x31,[...mqStr(topic),...enc.encode(payload)]));return true;}catch(e){return false;}
+  }
+}
+
+/* ---------- SYNC: one shared league, mirrored on several free public servers ----------
+   Each record (a player, a bracket, a chat message…) is one retained message:
+   {t: time, v: value} (v null = deleted). The newest t wins. When a device sees a
+   server that is missing a record or has an older copy, it re-sends the newest one,
+   so the servers keep each other up to date through the players' devices. */
+const VER={};   // "col/id" -> t of the copy we hold
 const Sync={
-  client:null,status:'warn',queue:[],lt:null,
+  conns:[],status:'warn',lt:null,
   rec(path){return String(path).split('/').filter(Boolean).slice(0,2);},
-  send(topic,payload){
-    if(this.client&&this.client.connected)this.client.publish(topic,payload,{qos:1,retain:true});
-    else this.queue.push([topic,payload]);
-  },
+  env(col,id){const v=D[col]?D[col][id]:undefined;return JSON.stringify({t:VER[col+'/'+id]||0,v:v==null?null:v});},
   pub(col,id){
     if(!col||!id)return;
-    const v=D[col]?D[col][id]:undefined;
-    this.send(BASE+'/'+col+'/'+id,v==null?'':JSON.stringify(v));
+    const k=col+'/'+id;VER[k]=Math.max(Date.now(),(VER[k]||0)+1);saveVer();
+    const payload=this.env(col,id);
+    this.conns.forEach(c=>c.publish(BASE+'/'+k,payload));
   },
   put(path,val){setPath(D,path,val);D=normalize(D);cache();const [c,id]=this.rec(path);this.pub(c,id);},
   del(path){setPath(D,path,null);D=normalize(D);cache();const [c,id]=this.rec(path);this.pub(c,id);},
   replaceAll(obj){
     const old=D;D=normalize(obj);cache();
     COLS.forEach(c=>{
-      Object.keys(old[c]||{}).forEach(id=>{if(!(id in (D[c]||{})))this.send(BASE+'/'+c+'/'+id,'');});
+      Object.keys(old[c]||{}).forEach(id=>{if(!(id in (D[c]||{})))this.pub(c,id);});
       Object.keys(D[c]||{}).forEach(id=>this.pub(c,id));
     });
   },
-  armLoaded(){
-    if(loaded)return;
-    clearTimeout(this.lt);
-    this.lt=setTimeout(()=>{loaded=true;this.setStatus('live');onLoaded();},1300);
-  },
   connect(){
-    if(typeof mqtt==='undefined'){this.setStatus('err','Offline');return;}
-    const c=mqtt.connect(MQTT_URL,{clientId:'ps4tl_'+uid()+uid(),clean:true,keepalive:30,reconnectPeriod:3000,connectTimeout:12000});
-    this.client=c;
-    c.on('connect',()=>{
-      this.setStatus(loaded?'live':'warn',loaded?'':'Syncing…');
-      c.subscribe(BASE+'/#',{qos:1},()=>{this.armLoaded();});
-      const q=this.queue;this.queue=[];q.forEach(([t,p])=>c.publish(t,p,{qos:1,retain:true}));
-    });
-    c.on('message',(topic,payload)=>{
-      const rest=topic.slice(BASE.length+1).split('/');
-      if(rest.length!==2||!COLS.includes(rest[0]))return;
-      const [col,id]=rest;
-      const before=loaded?champMap():null;
-      const txt=payload?payload.toString():'';
-      let val=null;if(txt){try{val=JSON.parse(txt);}catch(e){return;}}
-      if(!D[col]||typeof D[col]!=='object')D[col]={};
-      if(val==null)delete D[col][id];else D[col][id]=val;
-      D=normalize(D);
-      this.armLoaded();
-      scheduleRemote(before);
-    });
-    c.on('reconnect',()=>this.setStatus('warn','Reconnecting…'));
-    c.on('offline',()=>this.setStatus('err','Offline'));
-    c.on('error',()=>{});
+    const h={
+      message:(conn,topic,txt)=>{
+        const rest=topic.slice(BASE.length+1).split('/');
+        if(rest.length!==2||!COLS.includes(rest[0]))return;
+        const [col,id]=rest,k=col+'/'+id;conn.seen.add(k);
+        let env;try{env=txt?JSON.parse(txt):null;}catch(e){return;}
+        if(!env)return;
+        if(typeof env!=='object'||!('t' in env&&'v' in env))env={t:1,v:env}; // older format
+        const mine=VER[k]||0;
+        if(env.t>mine){
+          const before=loaded?champMap():null;
+          if(!D[col]||typeof D[col]!=='object')D[col]={};
+          if(env.v==null)delete D[col][id];else D[col][id]=env.v;
+          VER[k]=env.t;saveVer();D=normalize(D);
+          const fwd=JSON.stringify(env);this.conns.forEach(o=>{if(o!==conn&&o.settled)o.publish(topic,fwd);}); // relay to the other servers
+          scheduleRemote(before);
+        }else if(env.t<mine){if(conn.settled)conn.publish(topic,this.env(col,id));else conn.stale.add(k);} // that server is behind
+        if(!conn.settled)this.arm(conn);
+      },
+      subscribed:conn=>{conn.seen=new Set();conn.stale=new Set();conn.settled=false;this.arm(conn);this.refreshStatus();},
+      down:()=>{this.refreshStatus();}
+    };
+    this.conns=BROKERS.map(cfg=>{const c=new MiniMqtt(Object.assign({topic:BASE+'/#'},cfg),h);c.seen=new Set();c.stale=new Set();c.settled=false;return c;});
+    // never keep players waiting: after a few seconds, open the league from this device's copy
+    setTimeout(()=>{if(!loaded){loaded=true;this.refreshStatus();renderAll();}},5000);
+  },
+  arm(conn){ // a server has finished sending its stored records once it goes quiet
+    clearTimeout(conn.lt);
+    conn.lt=setTimeout(()=>{
+      conn.settled=true;
+      // fill in anything this server is missing or has older
+      Object.keys(VER).forEach(k=>{if(!conn.seen.has(k)||conn.stale.has(k))conn.publish(BASE+'/'+k,this.env(...k.split('/')));});conn.stale.clear();
+      const first=!loaded;loaded=true;this.refreshStatus();
+      if(first)onLoaded();else if(!this.seeded)onLoaded();
+    },1200);
+  },
+  refreshStatus(){
+    const up=this.conns.filter(c=>c.ok).length;
+    if(up)this.setStatus('live',`Live${this.conns.length>1?` · ${up}/${this.conns.length}`:''}`);
+    else this.setStatus(loaded?'err':'warn',loaded?'Offline':'Connecting…');
   },
   setStatus(s,txt){this.status=s;renderStatus(txt);}
 };
-function loadMqttLib(i){
-  i=i||0;
-  if(typeof mqtt!=='undefined'){Sync.connect();return;}
-  if(i>=MQTT_LIBS.length){Sync.setStatus('err','Offline');if(hasCache){loaded=true;}renderAll();return;}
-  const sc=document.createElement('script');sc.src=MQTT_LIBS[i];
-  sc.onload=()=>Sync.connect();sc.onerror=()=>loadMqttLib(i+1);
-  document.head.appendChild(sc);
-}
+function saveVer(){clearTimeout(saveVer.t);saveVer.t=setTimeout(()=>saveJSON(cacheKey()+':ver',VER),400);}
+Object.assign(VER,loadJSON(cacheKey()+':ver')||{});
+const leagueEmpty=()=>!G().length&&!P().length&&!B().length&&!Object.keys(VER).length;
 function onLoaded(){
-  if(!G().length&&!P().length){ // brand-new league
-    const local=localData();
-    const up=local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('The tropa league is empty. Upload the players, brackets and matches saved on this device?');
-    Sync.replaceAll(up?local:defaultData());
-  }
+  Sync.seeded=true;
   renderAll();
   heartbeat();
+  // brand-new league? double-check after every server has had time to answer, then set it up once
+  if(leagueEmpty()){ // brand-new league: offer this device's old data (from the single-device version)
+    const local=localData();
+    if(local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('The tropa league is empty. Upload the players, brackets and matches saved on this device?')){Sync.replaceAll(local);renderAll();return;}
+  }
+  // no games yet? add the default list (fixed ids, so two phones doing this at once can't duplicate them)
+  setTimeout(()=>{
+    if(G().length||!Sync.conns.some(c=>c.ok)||!Sync.conns.every(c=>c.settled||!c.ok))return;
+    DEFAULT_GAMES.forEach((n,i)=>{const id='g_'+n.toLowerCase().replace(/[^a-z0-9]+/g,'');Sync.put('/games/'+id,{id,name:n,order:i});});
+    if(!D.meta.title||!VER['meta/title'])Sync.put('/meta/title',D.meta.title||'PS4 Tropa League');
+    renderAll();
+  },3000);
 }
 function renderStatus(txt){
   $('#status').className='status '+({live:'live',warn:'warn',err:'err'}[Sync.status]||'');
@@ -1003,7 +1073,7 @@ function renderAuth(){
   $('#authTitle').textContent=D.meta.title||'PS4 Tropa League';
   $$('[data-auth]').forEach(b=>b.classList.toggle('active',b.dataset.auth===authMode));
   $('#authLogin').hidden=authMode!=='login';$('#authSignup').hidden=authMode!=='signup';
-  $('#authLoading').textContent=!loaded?(Sync.status==='err'?'Can’t reach the league server. Check your internet.':'Connecting to the tropa league…'):(P().length?'Tap your name':'No players yet. Create the first account!');
+  $('#authLoading').textContent=!loaded?(Sync.status==='err'?'Can’t reach the league servers. Check your internet.':'Connecting to the tropa league… (you can already log in)'):(P().length?'Tap your name':'No players yet. Create the first account!');
   $('#authPlayers').innerHTML=P().map(p=>`<button class="pcard ${authSel===p.id?'on':''}" data-pick-acc="${p.id}">${avatar(p.id)}${esc(p.name)}<small>${p.pin?'🔒 account':'tap to claim'}</small></button>`).join('');
   const p=D.players[authSel];
   $('#authPinBox').hidden=!p;
@@ -1130,8 +1200,8 @@ function renderSync(){
   $('#syncCard').innerHTML=`<h3>🌐 The Tropa League (online)</h3>
     <p class="small" style="margin:0">Everyone who opens <b>${esc(pageLink())}</b> and logs in joins this same league, live. No codes, no setup.</p>
     <div class="share-row"><button class="btn" id="copyBtn">🔗 Copy Link</button></div>
-    <p class="small muted">Status: ${Sync.status==='live'?'🟢 connected':Sync.status==='err'?'🔴 offline (your changes are sent when you reconnect)':'🟡 connecting'} · League ID <code>${esc(LEAGUE_ID)}</code></p>
-    <p class="small muted" style="margin-bottom:0">Data is kept on a free public real-time server. Anyone with the link can see the league, so keep it in the group chat, and hit Export below once in a while for a backup.</p>`;
+    <p class="small muted">Status: ${Sync.status==='live'?`🟢 connected (${Sync.conns.filter(c=>c.ok).length} of ${Sync.conns.length} servers)`:Sync.status==='err'?'🔴 offline (your changes are sent when you reconnect)':'🟡 connecting'} · League ID <code>${esc(LEAGUE_ID)}</code></p>
+    <p class="small muted" style="margin-bottom:0">Data is mirrored on free public real-time servers and on every player's device. Anyone with the link can see the league, so keep it in the group chat, and hit Export below once in a while for a backup.</p>`;
 }
 function renderSetup(){
   $('#pList').innerHTML=P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.pin?' 🔒':''}</button>${p.pin?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}<button class="chip-x" data-del-p="${p.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>';
@@ -1898,7 +1968,7 @@ $('#printAllBtn').addEventListener('click',()=>{document.body.classList.remove('
 renderAll();
 setTab(U.tab||'home');
 Sync.setStatus('warn','Connecting…');
-loadMqttLib(0);
+Sync.connect();
 if(!me()&&!U.guest)openAuth();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawConnectors);
 window.addEventListener('resize',drawConnectors);
