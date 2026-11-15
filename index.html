@@ -761,7 +761,7 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
         <button class="btn" id="suGo">Create Account</button>
       </div>
     </div>
-    <div class="auth-note">Your PIN is 4–6 digits. It keeps the tropa from posting as you; it's not bank-level security.<br>
+    <div class="auth-note">Your PIN is 4–6 digits. Use your name + PIN to log in on any phone.<br>
       <button class="linkbtn" id="authGuest">Just watching? Continue as guest →</button></div>
   </div>
 </div>
@@ -791,12 +791,20 @@ tr.clickrow:hover td{background:rgba(139,61,255,.13)}
 (function(){
 'use strict';
 /* ==========================================================
-   ONLINE LEAGUE (Firebase Realtime Database)
-   Paste your database URL between the quotes, then upload this
-   file to GitHub. Everyone who logs in joins the same league.
-   (Or use Setup → "Download index.html" to do it for you.)
+   ONLINE LEAGUE: same Firebase project as the Sidequest Board.
+   Accounts (name + PIN) are Firebase logins, so they work on any
+   phone. League data lives under its own "tropa" node.
    ========================================================== */
-const FIREBASE_DB_URL='';
+const FIREBASE_CONFIG={
+  apiKey: "AIzaSyBk7hdUTQaSFhTSOji5neWonFayROFy3Bs",
+  authDomain: "sidequest-301f1.firebaseapp.com",
+  databaseURL: "https://sidequest-301f1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sidequest-301f1",
+  storageBucket: "sidequest-301f1.firebasestorage.app",
+  messagingSenderId: "503094309997",
+  appId: "1:503094309997:web:5b5e1437bb0bbe02373b64"
+};
+const FB_VER='10.12.2';
 const DB_NODE='tropa';
 const COLS=['meta','players','games','matches','brackets','chat','presence'];
 
@@ -855,10 +863,8 @@ function fromV1(o){
 
 let U=Object.assign({tab:'home',stGame:'all',lgFilter:'all',currentBracket:null,lastGame:null,me:'',guest:false,dbLocal:'',lastSeenChat:0},loadJSON(UI_KEY)||{});
 const saveU=()=>saveJSON(UI_KEY,U);
-const dbURL=()=>(FIREBASE_DB_URL||U.dbLocal||'').replace(/\/+$/,'');
-const isOnline=()=>!!dbURL();
-// a share link can carry the database address (?db=…), so phones connect even before the file has it built in
-(()=>{const q=new URLSearchParams(location.search).get('db');if(q&&!FIREBASE_DB_URL&&/^https:\/\/[a-z0-9.-]+\.(firebaseio\.com|firebasedatabase\.app)\/?$/i.test(q)){U.dbLocal=q.replace(/\/+$/,'');saveU();}})();
+const isOnline=()=>true;
+
 const cacheKey=()=>isOnline()?DATA_KEY+':fb':DATA_KEY;
 function localData(){ // data from older single-device versions
   const c=loadJSON(DATA_KEY);if(c)return normalize(c);
@@ -896,104 +902,102 @@ function setPath(root,path,val){
   if(val===null||val===undefined){if(Array.isArray(o))o[k]=undefined;else delete o[k];}else o[k]=val;
 }
 
-/* ---------- SYNC: one shared league on Firebase Realtime Database ----------
-   1st choice: the official Firebase SDK (WebSocket, falls back to long-polling by itself).
-   Backup: Firebase REST live stream, plus a quick re-check whenever the stream goes quiet
-   (some mobile networks and in-app browsers hold streams back). */
-const FB_SDK=['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'];
+/* ---------- SYNC + ACCOUNTS: Firebase (same setup as the Sidequest Board) ----------
+   Uses the Firebase SDK with Firebase Auth. Name + PIN become a Firebase login, so the
+   same account works on every phone. Guests are signed in anonymously so they can watch.
+   This page runs as its own named Firebase app, so it never touches the Sidequest login. */
 const clean=v=>v===undefined?null:JSON.parse(JSON.stringify(v)); // Firebase refuses `undefined`
-function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);setTimeout(()=>no(new Error('timeout')),8000);});}
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);setTimeout(()=>no(new Error('timeout')),12000);});}
+const acctEmail=(pid,n)=>`${pid}.${n||0}@ps4tropa-league.app`.toLowerCase();
+const acctPw=pin=>'ps4!'+pin+'#tropa';
+const RULE_SNIPPET=`"${DB_NODE}": { ".read": "auth != null", ".write": "auth != null" }`;
 const Sync={
-  mode:null,got:false,status:'warn',es:null,lastEv:0,pollT:null,
-  url(p){return `${dbURL()}/${DB_NODE}${p||''}.json`;},
+  app:null,auth:null,db:null,uid:null,anon:true,got:false,status:'warn',listening:false,denied:false,
   ref(p){return this.db.ref(DB_NODE+(p||''));},
   write(method,p,val){
-    if(!isOnline())return Promise.resolve();
-    const fail=()=>{toast('⚠️ Couldn’t save online. Check your internet or the Firebase rules.');this.setStatus('err');};
-    if(this.mode==='sdk'){
-      const r=this.ref(p);
-      return (method==='DELETE'?r.remove():r.set(clean(val))).catch(fail);
-    }
-    return fetch(this.url(p),{method,body:val===undefined?undefined:JSON.stringify(clean(val))})
-      .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);if(!this.streamOk())this.poll(300);})
-      .catch(fail);
+    if(!this.db||!this.uid){toast('Still connecting to the league… your change is saved on this phone and will need to be redone.');return Promise.resolve();}
+    const r=this.ref(p);
+    return (method==='DELETE'?r.remove():r.set(clean(val))).catch(e=>{
+      if(e&&/permission/i.test(e.code||e.message||''))this.permissionProblem();
+      else toast('⚠️ Couldn’t save online. Check your internet.');
+    });
   },
   put(path,val){setPath(D,path,val);D=normalize(D);cache();this.write('PUT',path,val);},
   del(path){setPath(D,path,null);D=normalize(D);cache();this.write('DELETE',path);},
   replaceAll(obj){D=normalize(obj);cache();return this.write('PUT','',D);},
-  // a full copy of the league arrived (from the SDK or a re-check)
   apply(data){
-    const first=!this.got;this.got=true;
+    const first=!this.got;this.got=true;this.denied=false;
     const before=loaded&&!first?champMap():null;
     D=normalize(data||{});
+    syncMe();
     if(first){loaded=true;cache();onLoaded(!data);return;}
     scheduleRemote(before);
   },
   connect(){
-    if(!isOnline()){loaded=true;this.setStatus('local');renderAll();return;}
     this.setStatus('warn','Connecting…');
-    setTimeout(()=>{if(!loaded){loaded=true;renderAll();}},6000); // never keep the login screen waiting forever
-    Promise.all([loadScript(FB_SDK[0])]).then(()=>loadScript(FB_SDK[1])).then(()=>this.startSDK()).catch(()=>this.startREST());
+    setTimeout(()=>{if(!loaded){loaded=true;renderAll();}},7000); // never keep the login screen waiting forever
+    const base='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
+    loadScript(base+'firebase-app-compat.js')
+      .then(()=>Promise.all([loadScript(base+'firebase-auth-compat.js'),loadScript(base+'firebase-database-compat.js')]))
+      .then(()=>this.start())
+      .catch(()=>{this.setStatus('err','Offline');if(!loaded){loaded=true;renderAll();}});
   },
-  startSDK(){
+  start(){
     try{
-      const app=firebase.apps.length?firebase.app():firebase.initializeApp({databaseURL:dbURL()});
-      this.db=firebase.database(app);this.mode='sdk';
-      this.db.ref('.info/connected').on('value',s=>{if(this.mode!=='sdk')return;s.val()?this.setStatus('live','Live'):this.setStatus(this.got?'warn':'warn',this.got?'Reconnecting…':'Connecting…');});
-      this.ref('').on('value',snap=>{if(this.mode==='sdk')this.apply(snap.val());},
-        ()=>{this.setStatus('err','No permission');toast('⚠️ Firebase rules are blocking the league. See Setup.');});
-      // if nothing arrives in 8 s, switch to the backup connection
-      setTimeout(()=>{if(!this.got&&this.mode==='sdk'){try{this.ref('').off();this.db.goOffline();}catch(e){}this.startREST();}},8000);
-    }catch(e){this.startREST();}
+      this.app=firebase.apps.find(a=>a.name==='ps4tropa')||firebase.initializeApp(FIREBASE_CONFIG,'ps4tropa');
+      this.auth=this.app.auth();this.db=this.app.database();
+    }catch(e){this.setStatus('err','Offline');return;}
+    this.db.ref('.info/connected').on('value',s=>{if(this.denied)return;s.val()?this.setStatus('live','Live'):this.setStatus('warn',this.got?'Reconnecting…':'Connecting…');});
+    this.auth.onAuthStateChanged(u=>{
+      if(!u){this.uid=null;this.anon=true;this.auth.signInAnonymously().catch(e=>this.authFail(e));return;}
+      this.uid=u.uid;this.anon=!!u.isAnonymous;
+      this.listen();syncMe();renderAll();
+    });
   },
-  startREST(){
-    this.mode='rest';
-    this.poll(0); // get the league right away, don't wait for the stream
-    const open=()=>{
-      try{this.es&&this.es.close();}catch(e){}
-      let es;try{es=new EventSource(this.url(''));}catch(e){return;}
-      this.es=es;this.lastEv=0;this.openedAt=Date.now(); // the stream only counts once it actually delivers something
-      const handle=(type,e)=>{
-        this.lastEv=Date.now();
-        let msg;try{msg=JSON.parse(e.data);}catch(_){return;}
-        if(!msg)return;
-        if(type==='put'&&msg.path==='/'){this.apply(msg.data);this.setStatus('live','Live');return;}
-        if(!this.got)return; // a full copy comes first
-        const before=loaded?champMap():null;
-        if(type==='put')setPath(D,msg.path,msg.data);
-        else{const base=msg.path==='/'?'':msg.path;Object.keys(msg.data||{}).forEach(k=>setPath(D,base+'/'+k,msg.data[k]));}
-        D=normalize(D);this.setStatus('live','Live');
-        scheduleRemote(before);
-      };
-      es.addEventListener('put',e=>handle('put',e));
-      es.addEventListener('patch',e=>handle('patch',e));
-      es.addEventListener('keep-alive',()=>{this.lastEv=Date.now();});
-      es.addEventListener('cancel',()=>{this.setStatus('err','No permission');toast('⚠️ Firebase rules are blocking the league. See Setup.');});
-      es.onerror=()=>{if(es.readyState===2)setTimeout(open,3000);};
-    };
-    open();
-    // watchdog: Firebase sends a keep-alive every ~30 s; if the stream is quiet, re-check and reopen it
-    clearInterval(this.wd);
-    this.wd=setInterval(()=>{if(document.hidden)return;if(!this.streamOk()){this.poll(0);if(Date.now()-Math.max(this.lastEv,this.openedAt||0)>60000)open();}},4000);
+  listen(){
+    if(this.listening)return;this.listening=true;
+    this.ref('').on('value',snap=>this.apply(snap.val()),()=>{this.listening=false;this.permissionProblem();});
   },
-  streamOk(){return this.mode==='rest'&&Date.now()-this.lastEv<45000;},
-  poll(delay){
-    clearTimeout(this.pollT);
-    this.pollT=setTimeout(()=>{
-      fetch(this.url(''),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
-        .then(data=>{if(typingNow()&&this.got)return;this.apply(data);if(!this.streamOk())this.setStatus('live','Live');})
-        .catch(()=>{this.setStatus('err','Offline');});
-    },delay||0);
+  permissionProblem(){
+    this.denied=true;this.setStatus('err','No permission');
+    if(!loaded){loaded=true;}
+    renderAll();
+    toast('⚠️ The Firebase rules don’t allow the league yet. See Setup.');
   },
-  disconnect(){try{this.es&&this.es.close();}catch(e){}clearInterval(this.wd);if(this.db){try{this.ref('').off();this.db.goOffline();}catch(e){}}this.mode=null;this.got=false;},
+  authFail(e){
+    const c=e&&e.code||'';
+    if(c==='auth/network-request-failed')this.setStatus('err','Offline');
+    else this.setStatus('err','Sign-in failed');
+  },
+  signOut(){if(this.auth)return this.auth.signOut().catch(()=>{});return Promise.resolve();},
+  // create a Firebase login for this player (keeps the anonymous session's id when possible, like the Sidequest Board)
+  async createLogin(email,pw){
+    const u=this.auth.currentUser;
+    if(u&&u.isAnonymous){
+      try{const res=await u.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email,pw));return res.user||u;}
+      catch(e){if(!/credential-already-in-use|email-already-in-use/.test(e.code||''))throw e;}
+    }
+    const res=await this.auth.createUserWithEmailAndPassword(email,pw);return res.user;
+  },
+  async signIn(email,pw){const res=await this.auth.signInWithEmailAndPassword(email,pw);return res.user;},
+  setUser(u){this.uid=u.uid;this.anon=false;},
   setStatus(s,txt){this.status=s;renderStatus(txt);}
 };
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Sync.mode==='rest'&&!Sync.streamOk())Sync.poll(0);});
+// which player is logged in on this device = the player whose Firebase login is active
+function syncMe(){
+  if(!Sync.uid||!Sync.got)return;
+  if(Sync.anon){if(U.me){U.me='';saveU();if(!U.guest)openAuth();}return;}
+  const p=Object.values(D.players).find(x=>x&&x.uid===Sync.uid);
+  if(!p)return;
+  if(p.removed){U.me='';saveU();Sync.signOut();toast('You were removed from the league by the admin.');openAuth();return;}
+  if(U.me!==p.id){U.me=p.id;U.guest=false;saveU();closeAuth();}
+}
 function onLoaded(empty){
   if(empty){ // brand-new league
     const local=localData();
     const up=local&&(Object.keys(local.players).length||Object.keys(local.brackets).length)&&confirm('The tropa league is empty. Upload the players, brackets and matches saved on this device?');
     const d=up?local:defaultData();
+    Object.values(d.players).forEach(p=>{delete p.uid;delete p.uid;}); // old PIN accounts get claimed again with a Firebase login
     Object.keys(D.players).forEach(id=>{if(!d.players[id])d.players[id]=D.players[id];});
     Sync.replaceAll(d);
   }else if(!G().length){
@@ -1003,7 +1007,7 @@ function onLoaded(empty){
 }
 function renderStatus(txt){
   $('#status').className='status '+({live:'live',warn:'warn',err:'err'}[Sync.status]||'');
-  $('#statusTx').textContent=txt||(Sync.status==='live'?'Live':Sync.status==='err'?'Offline':Sync.status==='local'?'Not online yet':'Connecting…');
+  $('#statusTx').textContent=txt||(Sync.status==='live'?'Live':Sync.status==='err'?'Offline':'Connecting…');
 }
 // don't re-render under someone's fingers (score boxes, unsent newspaper statement)
 let pendingRender=false,lastKey=0,remoteTimer=null,remoteBefore=null;
@@ -1026,100 +1030,25 @@ function afterRemote(before){
   renderAll();
 }
 document.addEventListener('focusout',()=>{if(pendingRender)setTimeout(flushPending,0);});
-function heartbeat(){if(me()&&loaded&&isOnline()&&Sync.got)Sync.put('/presence/'+me(),{ts:Date.now()});}
+function heartbeat(){if(me()&&loaded&&Sync.got&&Sync.uid&&!Sync.anon)Sync.put('/presence/'+me(),{ts:Date.now()});}
 setInterval(heartbeat,60000);
-const pageLink=()=>{const base=location.href.split('#')[0].split('?')[0];return !FIREBASE_DB_URL&&U.dbLocal?base+'?db='+encodeURIComponent(U.dbLocal):base;};
+const pageLink=()=>location.href.split('#')[0].split('?')[0];
 function copyLink(){
   const link=pageLink();
   const done=()=>toast('🔗 Link copied! Send it to the tropa.');
   if(navigator.clipboard)navigator.clipboard.writeText(link).then(done).catch(()=>prompt('Copy this link:',link));
   else prompt('Copy this link:',link);
 }
-
-/* ---------- SETUP: connect Firebase ---------- */
-function validDb(v){return /^https:\/\/[a-z0-9.-]+\.(firebaseio\.com|firebasedatabase\.app)\/?$/i.test(v)||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(v);}
-const RULES=`{
-  "rules": {
-    "${DB_NODE}": { ".read": true, ".write": true }
-  }
-}`;
 function renderSync(){
   const el=$('#syncCard');
-  if(document.activeElement&&el.contains(document.activeElement))return;
-  const guide=`<details ${isOnline()?'':'open'}><summary>How to put the league online with Firebase (free, about 5 minutes)</summary><ol>
-      <li>Go to <b>console.firebase.google.com</b> → <b>Create a project</b> (any name; Analytics can be off).</li>
-      <li>Left menu: <b>Build → Realtime Database</b> → <b>Create Database</b> → pick a location → <b>Start in test mode</b>.</li>
-      <li>Open the <b>Rules</b> tab, paste the rules below, click <b>Publish</b>. (Test mode stops after 30 days; these rules don't.)</li>
-      <li>Copy the database URL at the top of the <b>Data</b> tab (like <code>https://xxxx-default-rtdb.firebaseio.com</code>) and paste it below.</li>
-      <li>Click <b>Download index.html</b>, upload that file to GitHub (replace the old one), and send the GitHub Pages link to the tropa. Everyone who logs in lands in the same PS4 Tropa League.</li>
-    </ol><pre>${esc(RULES)}</pre></details>`;
-  if(FIREBASE_DB_URL){
-    el.innerHTML=`<h3>🌐 The Tropa League is online</h3><p class="small" style="margin:0">✅ Connected to Firebase. Everyone who opens <b>${esc(pageLink())}</b> and logs in joins this same league, live.</p>
-      <div class="share-row"><button class="btn" id="copyBtn">🔗 Copy Link</button></div>
-      <p class="small muted" style="margin-bottom:0">Anyone with the link can open the league, so keep it in the group chat. Export a backup below once in a while.</p>`;
-    return;
-  }
-  el.innerHTML=`<h3>🌐 Put the Tropa League online</h3>
-    <p class="small muted" style="margin-top:0">${isOnline()?'✅ This device is connected. Download the file below and upload it to GitHub so everyone connects automatically.':'Right now the league is saved only on this device. Connect a free Firebase database so the whole tropa logs into one live league.'}</p>
-    <label class="fl">Firebase Realtime Database URL<input id="dbIn" value="${esc(U.dbLocal||'')}" placeholder="https://your-project-default-rtdb.firebaseio.com"></label>
-    <div class="row">
-      <button class="btn" id="bakeBtn">⬇️ Download index.html (with this URL built in)</button>
-      <button class="btn ghost" id="connBtn">${isOnline()?'Reconnect':'Connect this device'}</button>
-      ${isOnline()?'<button class="btn danger" id="discBtn">Disconnect</button>':''}
-    </div>${location.protocol==='file:'?'<div class="warnbox">You opened this file from your computer. After downloading, upload it to GitHub Pages so your friends can open the link.</div>':''}${guide}`;
+  el.innerHTML=`<h3>🌐 The Tropa League is online</h3>
+    <p class="small" style="margin:0">Same setup as the Sidequest Board: everyone who opens <b>${esc(pageLink())}</b> and logs in with their name + PIN joins this league, on any phone, live.</p>
+    <div class="share-row"><button class="btn" id="copyBtn">🔗 Copy Link</button></div>
+    <p class="small muted">Status: ${Sync.status==='live'?'🟢 connected':Sync.denied?'🔴 blocked by the Firebase rules (see below)':Sync.status==='err'?'🔴 offline':'🟡 connecting'}</p>
+    ${Sync.denied?`<div class="warnbox">One-time fix: in the Firebase console of your Sidequest project, open <b>Realtime Database → Rules</b> and add this line inside <code>"rules": { … }</code>, next to the rules that are already there (don't delete the Sidequest ones), then click <b>Publish</b>:<pre>${esc(RULE_SNIPPET)}</pre></div>`:''}`;
 }
-async function bake(){
-  const v=($('#dbIn').value||'').trim().replace(/\/+$/,'');
-  if(!validDb(v)){alert('Paste your Firebase Realtime Database URL first (e.g. https://xxxx-default-rtdb.firebaseio.com).');return;}
-  const re=/const FIREBASE_DB_URL='[^']*';/;
-  try{
-    const r=await fetch(pageLink(),{cache:'no-store'});let html=await r.text();
-    if(!re.test(html))throw new Error('marker');
-    html=html.replace(re,"const FIREBASE_DB_URL='"+v+"';");
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='index.html';
-    document.body.appendChild(a);a.click();a.remove();
-    toast('Downloaded! Upload this index.html to GitHub.');
-  }catch(err){
-    alert("Your browser blocked the automatic download (common when the file is opened from your computer).\n\nDo it by hand: open index.html on GitHub, click the ✏️ pencil, find this line near the top of the script:\n\nconst FIREBASE_DB_URL='';\n\nput your URL between the quotes:\n\nconst FIREBASE_DB_URL='"+v+"';\n\nthen commit.");
-  }
-}
-document.addEventListener('click',e=>{
-  if(e.target.closest('#bakeBtn'))bake();
-  if(e.target.closest('#connBtn')){
-    const v=($('#dbIn').value||'').trim();
-    if(!validDb(v)){alert('Paste your Firebase Realtime Database URL (e.g. https://xxxx-default-rtdb.firebaseio.com).');return;}
-    Sync.disconnect();U.dbLocal=v.replace(/\/+$/,'');saveU();loaded=false;D=normalize(loadJSON(cacheKey())||{});renderAll();Sync.connect();
-  }
-  if(e.target.closest('#discBtn')){
-    if(!confirm('Disconnect this device from the online league?'))return;
-    Sync.disconnect();U.dbLocal='';saveU();D=normalize(loadJSON(cacheKey())||localData()||defaultData());loaded=true;Sync.setStatus('local');renderAll();
-  }
-});
 
 /* ---------- ACCOUNTS ---------- */
-function sha256(ascii){
-  function rr(v,a){return (v>>>a)|(v<<(32-a));}
-  var maxWord=Math.pow(2,32),result='',words=[],bitLen=ascii.length*8,hash=[],k=[],pc=0,comp={},i,j;
-  for(var c=2;pc<64;c++){if(!comp[c]){for(i=0;i<313;i+=c)comp[i]=c;hash[pc]=(Math.pow(c,.5)*maxWord)|0;k[pc++]=(Math.pow(c,1/3)*maxWord)|0;}}
-  hash=hash.slice(0,8);ascii+='\x80';
-  while(ascii.length%64-56)ascii+='\x00';
-  for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return '';words[i>>2]|=j<<((3-i)%4)*8;}
-  words[words.length]=((bitLen/maxWord)|0);words[words.length]=bitLen;
-  for(j=0;j<words.length;){
-    var w=words.slice(j,j+=16),old=hash;hash=hash.slice(0,8);
-    for(i=0;i<64;i++){
-      var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
-      var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
-      var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
-      hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;
-    }
-    for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0;
-  }
-  for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
-  return result;
-}
-// same result on every phone and browser (no reliance on crypto.subtle)
-async function hashPin(id,pin){return sha256('ps4tropa:'+id+':'+pin);}
 let authSel=null,authMode='login';
 function openAuth(mode){authMode=mode||'login';authSel=null;$('#auth').hidden=false;renderAuth();}
 function closeAuth(){$('#auth').hidden=true;}
@@ -1127,15 +1056,15 @@ function login(id){U.me=id;U.guest=false;saveU();closeAuth();setTab('home');rend
 function renderAuth(){
   if($('#auth').hidden)return;
   $('#authTitle').textContent=D.meta.title||'PS4 Tropa League';
-  $('#authSub').innerHTML=isOnline()?'Log in to join the league':'<span style="color:#ffe3a3">⚠️ This page isn’t online yet, so accounts made here stay on this device only. The admin needs to finish Setup → Firebase.</span>';
+  $('#authSub').innerHTML=Sync.denied?'<span style="color:#ffe3a3">⚠️ The league isn’t open yet: the admin needs to add one Firebase rule (see Setup).</span>':'Log in to join the league';
   $$('[data-auth]').forEach(b=>b.classList.toggle('active',b.dataset.auth===authMode));
   $('#authLogin').hidden=authMode!=='login';$('#authSignup').hidden=authMode!=='signup';
   $('#authLoading').textContent=!loaded?(Sync.status==='err'?'Can’t reach the league. Check your internet.':'Connecting to the tropa league…'):(P().length?'Tap your name':'No players yet. Create the first account!');
-  $('#authPlayers').innerHTML=P().map(p=>`<button class="pcard ${authSel===p.id?'on':''}" data-pick-acc="${p.id}">${avatar(p.id)}${esc(p.name)}<small>${p.pin?'🔒 account':'tap to claim'}</small></button>`).join('');
+  $('#authPlayers').innerHTML=P().map(p=>`<button class="pcard ${authSel===p.id?'on':''}" data-pick-acc="${p.id}">${avatar(p.id)}${esc(p.name)}<small>${p.uid?'🔒 account':'tap to claim'}</small></button>`).join('');
   const p=D.players[authSel];
   $('#authPinBox').hidden=!p;
   if(p){
-    const first=!p.pin;
+    const first=!p.uid;
     $('#authPinLbl').textContent=first?`First time, ${p.name}? Set a 4–6 digit PIN`:`Enter your PIN, ${p.name}`;
     $('#authPin2').hidden=!first;
     $('#authGo').textContent=first?'Set PIN & Log In':'Log In';
@@ -1255,7 +1184,7 @@ const playerUsed=id=>Object.values(D.matches).some(m=>m.p1===id||m.p2===id)||B()
 const gameUsed=id=>Object.values(D.matches).some(m=>m.game===id)||B().some(b=>b.game===id);
 function renderSetup(){
   const adm=isAdmin(),admId=D.meta.admin&&D.players[D.meta.admin]&&!D.players[D.meta.admin].removed?D.meta.admin:'';
-  $('#pList').innerHTML=(P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.id===admId?' 👑':''}${p.pin?' 🔒':''}</button>${adm&&p.id!==me()?`<button class="chip-x" data-mk-admin="${p.id}" title="Make ${esc(p.name)} the admin">👑</button>`:''}${adm&&p.pin?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}${adm&&p.id!==me()?`<button class="chip-x" data-del-p="${p.id}" title="Remove player">✕</button>`:''}</span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>')
+  $('#pList').innerHTML=(P().length?P().map(p=>`<span class="chip"><button class="chip-name" data-ren-p="${p.id}" title="Rename">${pTag(p.id)}${p.id===admId?' 👑':''}${p.uid?' 🔒':''}</button>${adm&&p.id!==me()?`<button class="chip-x" data-mk-admin="${p.id}" title="Make ${esc(p.name)} the admin">👑</button>`:''}${adm&&p.uid?`<button class="chip-x" data-clr-p="${p.id}" title="Clear PIN (forgot PIN)">🔑</button>`:''}${adm&&p.id!==me()?`<button class="chip-x" data-del-p="${p.id}" title="Remove player">✕</button>`:''}</span>`).join(''):'<span class="small muted">No players yet. Friends can create their own accounts on the login screen.</span>')
     +(!admId&&me()?`<div style="width:100%;margin-top:8px"><button class="btn sm" id="claimAdmin">👑 Become the league admin</button></div>`:'')
     +(admId?`<div class="small muted" style="width:100%;margin-top:6px">👑 Admin: <b>${esc(pName(admId))}</b>${adm?' (you)':''}</div>`:'');
   $('#gList').innerHTML=G().length?G().map(g=>`<span class="chip"><button class="chip-name" data-ren-g="${g.id}" title="Rename">🎮 ${esc(g.name)}</button><button class="chip-x" data-del-g="${g.id}" title="Remove">✕</button></span>`).join(''):'<span class="small muted">No games yet.</span>';
@@ -1499,7 +1428,7 @@ function renderHome(){
   const rows=computeStandings('all').rows.filter(r=>r.gp>0).slice(0,5);
   $('#homeTable').innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Player</th><th class="num">W</th><th class="num">L</th><th class="num">${ico()}</th><th class="num">Pts</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?'lead':''}"><td class="rk">${['🥇','🥈','🥉'][i]||i+1}</td><td>${pTag(r.id)}</td><td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${r.titles||'–'}</td><td class="pts">${r.pts}</td></tr>`).join('')}</tbody></table>`:'<div class="empty small">No matches yet.</div>';
   const now=Date.now();
-  $('#homePlayers').innerHTML=P().length?P().map(p=>{const pr=D.presence[p.id];const on=pr&&now-pr.ts<3*60000;return `<div class="prow"><span class="${on?'dot-on':'dot-off'}"></span>${pTag(p.id)}${p.id===id?' <span class="tag">you</span>':''}<span class="muted">${on?'online':pr?'seen '+ago(pr.ts):(p.pin?'':'no account yet')}</span></div>`;}).join(''):'<div class="empty small">No players yet.</div>';
+  $('#homePlayers').innerHTML=P().length?P().map(p=>{const pr=D.presence[p.id];const on=pr&&now-pr.ts<3*60000;return `<div class="prow"><span class="${on?'dot-on':'dot-off'}"></span>${pTag(p.id)}${p.id===id?' <span class="tag">you</span>':''}<span class="muted">${on?'online':pr?'seen '+ago(pr.ts):(p.uid?'':'no account yet')}</span></div>`;}).join(''):'<div class="empty small">No players yet.</div>';
 }
 
 /* ---------- NEWSPAPER: facts + what players actually wrote ---------- */
@@ -1778,7 +1707,7 @@ function renderAll(){
 $$('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 document.addEventListener('click',e=>{
   if(e.target.closest('[data-login],#loginBtn'))openAuth();
-  if(e.target.closest('#logoutBtn')){U.me='';U.guest=false;saveU();renderAll();openAuth();}
+  if(e.target.closest('#logoutBtn')){Sync.signOut();U.me='';U.guest=false;saveU();renderAll();openAuth();}
   if(e.target.closest('[data-news]')){const n=$('#newspaper');if(n)n.scrollIntoView({behavior:'smooth'});}
   if(e.target.closest('#printNews')){document.body.classList.remove('print-all');document.body.classList.add('print-news');window.print();}
   if(e.target.closest('#copyBtn'))copyLink();
@@ -1799,28 +1728,48 @@ async function doLogin(){
   const p=D.players[authSel];if(!p)return;
   const pin=$('#authPin').value.trim();
   if(!/^\d{4,6}$/.test(pin)){toast('PIN must be 4–6 digits.');return;}
-  if(p.pin){
-    if(await hashPin(p.id,pin)===p.pin)login(p.id);else{toast('Wrong PIN. Try again.');$('#authPin').select();}
-  }else{
-    if(pin!==$('#authPin2').value.trim()){toast('PINs don’t match.');return;}
-    Sync.put('/players/'+p.id+'/pin',await hashPin(p.id,pin));login(p.id);
-  }
+  if(!Sync.auth){toast('Still connecting to the league… try again in a moment.');return;}
+  $('#authGo').disabled=true;
+  try{
+    if(p.uid){
+      const u=await Sync.signIn(acctEmail(p.id,p.acctN),acctPw(pin));
+      Sync.setUser(u);login(p.id);
+    }else{
+      if(pin!==$('#authPin2').value.trim()){toast('PINs don’t match.');return;}
+      const u=await Sync.createLogin(acctEmail(p.id,p.acctN),acctPw(pin));
+      Sync.setUser(u);Sync.put('/players/'+p.id+'/uid',u.uid);login(p.id);
+    }
+  }catch(e){
+    const c=e&&e.code||'';
+    if(/wrong-password|invalid-credential|invalid-login-credentials|user-not-found/.test(c)){toast('Wrong PIN. Try again.');$('#authPin').select();}
+    else if(/too-many-requests/.test(c))toast('Too many tries. Wait a minute and try again.');
+    else if(/network/.test(c))toast('No internet connection. Try again.');
+    else toast('Couldn’t log in ('+(c||'error')+').');
+  }finally{$('#authGo').disabled=false;}
 }
 $('#authGo').addEventListener('click',doLogin);
 ['#authPin','#authPin2'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
 async function doSignup(){
   const name=$('#suName').value.trim().slice(0,24),pin=$('#suPin').value.trim();
   if(!name){toast('Enter your name.');return;}
-  if(isOnline()&&!Sync.got){toast(Sync.status==='err'?'Can’t reach the league. Check your internet and try again.':'Still connecting to the league… try again in a moment.');return;}
+  if(!Sync.auth||!Sync.got){toast(Sync.status==='err'?'Can’t reach the league. Check your internet and try again.':'Still connecting to the league… try again in a moment.');return;}
   const ex=P().find(p=>p.name.toLowerCase()===name.toLowerCase());
-  if(ex){toast(ex.pin?'That name is taken. Log in instead.':'That name already exists. Tap it on the Log In tab to claim it.');authMode='login';authSel=ex.pin?null:ex.id;renderAuth();return;}
+  if(ex){toast(ex.uid?'That name is taken. Log in instead.':'That name already exists. Tap it on the Log In tab to claim it.');authMode='login';authSel=ex.uid?null:ex.id;renderAuth();return;}
   if(!/^\d{4,6}$/.test(pin)){toast('PIN must be 4–6 digits.');return;}
   if(pin!==$('#suPin2').value.trim()){toast('PINs don’t match.');return;}
   const id=uid();
-  Sync.put('/players/'+id,{id,name,order:Date.now(),pin:await hashPin(id,pin)});
-  if(!D.meta.admin)Sync.put('/meta/admin',id); // the first account runs the league
-  $('#suName').value=$('#suPin').value=$('#suPin2').value='';
-  login(id);
+  $('#suGo').disabled=true;
+  try{
+    const u=await Sync.createLogin(acctEmail(id,0),acctPw(pin));
+    Sync.setUser(u);
+    Sync.put('/players/'+id,{id,name,order:Date.now(),uid:u.uid,acctN:0});
+    if(!D.meta.admin||!D.players[D.meta.admin]||D.players[D.meta.admin].removed)Sync.put('/meta/admin',id); // the first account runs the league
+    $('#suName').value=$('#suPin').value=$('#suPin2').value='';
+    login(id);
+  }catch(e){
+    const c=e&&e.code||'';
+    toast(/network/.test(c)?'No internet connection. Try again.':'Couldn’t create the account ('+(c||'error')+').');
+  }finally{$('#suGo').disabled=false;}
 }
 $('#suGo').addEventListener('click',doSignup);
 ['#suPin2'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')doSignup();}));
@@ -1848,14 +1797,14 @@ $('#pList').addEventListener('click',e=>{
   const r=e.target.closest('[data-ren-p]'),d=e.target.closest('[data-del-p]'),c=e.target.closest('[data-clr-p]'),a=e.target.closest('[data-mk-admin]');
   if((r||d||c||a)&&!requireLogin())return;
   if((d||c||a)&&!isAdmin()){toast('Only the admin can do that.');return;}
-  if(r){const p=D.players[r.dataset.renP];if(p.id!==me()&&p.pin&&!isAdmin()){toast('Only the admin can rename someone else’s account.');return;}
+  if(r){const p=D.players[r.dataset.renP];if(p.id!==me()&&p.uid&&!isAdmin()){toast('Only the admin can rename someone else’s account.');return;}
     const n=prompt('New name:',p.name);if(n&&n.trim()){Sync.put('/players/'+p.id+'/name',n.trim().slice(0,24));renderAll();}}
   if(a){const id=a.dataset.mkAdmin;if(confirm(`Make ${pName(id)} the league admin? You will no longer be admin.`)){Sync.put('/meta/admin',id);renderAll();}}
-  if(c){const id=c.dataset.clrP;if(confirm(`Clear ${pName(id)}'s PIN? They'll set a new one the next time they log in.`)){Sync.del('/players/'+id+'/pin');renderAll();}}
+  if(c){const id=c.dataset.clrP;if(confirm(`Reset ${pName(id)}'s PIN? They'll set a new one the next time they log in.`)){const p=D.players[id];Sync.put('/players/'+id,Object.assign({},p,{uid:null,acctN:(p.acctN||0)+1}));renderAll();}}
   if(d){const id=d.dataset.delP,n=pName(id);
     if(playerUsed(id)){
       if(!confirm(`Remove ${n} from the league?\n\nThey can't log in anymore and won't appear in the standings, brackets or player lists. Their past matches stay in the history.`))return;
-      const p=Object.assign({},D.players[id],{removed:true});delete p.pin;Sync.put('/players/'+id,p);
+      const p=Object.assign({},D.players[id],{removed:true});Sync.put('/players/'+id,p);
     }else{if(!confirm(`Remove ${n}?`))return;Sync.del('/players/'+id);}
     excluded.delete(id);renderAll();toast(`${n} was removed.`);}
 });
